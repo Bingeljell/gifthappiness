@@ -5,20 +5,24 @@ export default function Home() {
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
-      <section className="relative pt-24 pb-40 overflow-hidden bg-creme">
-        {/* Background Patterns - Large scattered dots */}
-        <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
-          <div className="absolute top-[10%] left-[5%] w-8 h-8 rounded-full bg-primary-pink/10" />
-          <div className="absolute top-[20%] right-[15%] w-6 h-6 rounded-full bg-primary-pink/10" />
-          <div className="absolute top-[60%] left-[12%] w-10 h-10 rounded-full bg-primary-pink/10" />
-          <div className="absolute top-[50%] right-[8%] w-12 h-12 rounded-full bg-primary-pink/10" />
-          <div className="absolute bottom-[15%] left-[25%] w-6 h-6 rounded-full bg-primary-pink/10" />
-          <div className="absolute bottom-[10%] right-[30%] w-8 h-8 rounded-full bg-primary-pink/10" />
-          <div className="bg-dots absolute inset-0 opacity-[0.05]" />
-        </div>
-        <div className="absolute inset-0 bg-gradient-to-b from-soft-pink/30 to-creme -z-20" />
+      <section className="relative pt-24 pb-40 overflow-hidden">
+        {/* Background Patterns - Layered for visibility */}
+        <div className="absolute inset-0 bg-creme -z-30" />
+        <div className="absolute inset-0 bg-gradient-to-b from-soft-pink/40 to-transparent -z-20" />
         
-        <div className="container mx-auto px-4 text-center">
+        <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
+          {/* Large scattered dots - higher opacity and clearer colors */}
+          <div className="absolute top-[12%] left-[8%] w-12 h-12 rounded-full bg-primary-pink/15" />
+          <div className="absolute top-[18%] right-[12%] w-10 h-10 rounded-full bg-accent-pink/20" />
+          <div className="absolute top-[55%] left-[5%] w-16 h-16 rounded-full bg-primary-pink/10" />
+          <div className="absolute top-[45%] right-[5%] w-14 h-14 rounded-full bg-primary-pink/15" />
+          <div className="absolute bottom-[20%] left-[20%] w-8 h-8 rounded-full bg-accent-pink/20" />
+          <div className="absolute bottom-[15%] right-[25%] w-12 h-12 rounded-full bg-primary-pink/15" />
+          {/* Finer dot pattern */}
+          <div className="bg-dots absolute inset-0 opacity-[0.08]" />
+        </div>
+        
+        <div className="container mx-auto px-4 text-center relative z-10">
           <div className="inline-block px-4 py-2 mb-8 rounded-full bg-white shadow-sm border border-gray-100 text-primary-pink text-xs font-bold uppercase tracking-widest">
             🎉 Simple & Meaningful
           </div>
