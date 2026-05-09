@@ -1,28 +1,40 @@
 @import "tailwindcss";
 
 :root {
-  --background: #FFFFFF; /* White */
-  --foreground: #D11F63; /* Deep Pink */
+  --background: #FFFDF9; /* Creme */
+  --foreground: #111827;
 }
 
 @theme inline {
-  --color-primary-pink: #D11F63;
-  --color-soft-pink: #FAD0C4;
-  --color-accent-pink: #FFF1F2;
-  --color-burgundy: #D11F63; /* Redirecting old name to pink for compatibility */
-  --color-sand: #FFFFFF;    /* Redirecting old name to white */
-  --color-peach: #FAD0C4;
-  --color-terracotta: #F472B6; /* Pink accent */
+  --color-primary-pink: #FF2D55;
+  --color-soft-pink: #FFF0F5;
+  --color-accent-pink: #FF80AB;
+  --color-creme: #FFFDF9;
+  --color-text-main: #111827;
+  --color-text-muted: #4B5563;
+  --font-serif: var(--font-serif);
+  --color-burgundy: #FF2D55;
+  --color-sand: #FFFDF9;
+  --color-peach: #FFF0F5;
+  --color-terracotta: #FF2D55;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
+@layer utilities {
+  .bg-dots {
+    background-image: radial-gradient(#FF2D55 0.5px, transparent 0.5px);
+    background-size: 24px 24px;
+    opacity: 0.1;
+  }
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #500724; /* Deep Burgundy/Dark Pink */
-    --foreground: #FFF1F2; /* Soft Pink */
+    --background: #0F172A;
+    --foreground: #F8FAFC;
   }
 }
 

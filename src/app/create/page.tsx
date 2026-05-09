@@ -17,7 +17,7 @@ export default function CreateCelebration() {
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-primary-pink/20 rounded-full blur-3xl -mr-48 -mb-48" />
 
       <div className="w-full max-w-xl">
-        <div className="bg-white/95 backdrop-blur-md rounded-[40px] p-8 md:p-12 shadow-2xl border border-white/20">
+        <div className="bg-creme/95 backdrop-blur-md rounded-[40px] p-8 md:p-12 shadow-2xl border border-white/20">
           <div className="flex items-center gap-3 mb-8">
             <div className="w-10 h-10 rounded-full bg-primary-pink flex items-center justify-center">
               <Heart className="w-6 h-6 text-white fill-white" />
