@@ -6,9 +6,17 @@ export default function Home() {
     <div className="flex flex-col">
       {/* Hero Section */}
       <section className="relative pt-24 pb-40 overflow-hidden bg-creme">
-        {/* Background Patterns */}
-        <div className="absolute inset-0 bg-dots -z-10" />
-        <div className="absolute inset-0 bg-gradient-to-b from-soft-pink/50 to-creme -z-20" />
+        {/* Background Patterns - Large scattered dots */}
+        <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
+          <div className="absolute top-[10%] left-[5%] w-8 h-8 rounded-full bg-primary-pink/10" />
+          <div className="absolute top-[20%] right-[15%] w-6 h-6 rounded-full bg-primary-pink/10" />
+          <div className="absolute top-[60%] left-[12%] w-10 h-10 rounded-full bg-primary-pink/10" />
+          <div className="absolute top-[50%] right-[8%] w-12 h-12 rounded-full bg-primary-pink/10" />
+          <div className="absolute bottom-[15%] left-[25%] w-6 h-6 rounded-full bg-primary-pink/10" />
+          <div className="absolute bottom-[10%] right-[30%] w-8 h-8 rounded-full bg-primary-pink/10" />
+          <div className="bg-dots absolute inset-0 opacity-[0.05]" />
+        </div>
+        <div className="absolute inset-0 bg-gradient-to-b from-soft-pink/30 to-creme -z-20" />
         
         <div className="container mx-auto px-4 text-center">
           <div className="inline-block px-4 py-2 mb-8 rounded-full bg-white shadow-sm border border-gray-100 text-primary-pink text-xs font-bold uppercase tracking-widest">
@@ -27,11 +35,11 @@ export default function Home() {
             For your birthday, wedding, or anniversary — invite friends to donate to a charity you love instead of giving gifts.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-            <Link href="/create" className="w-full sm:w-auto px-10 py-5 rounded-full bg-primary-pink text-white font-bold text-lg hover:bg-primary-pink/90 transition-all shadow-xl shadow-primary-pink/25 flex items-center justify-center gap-3">
+            <Link href="/create" className="w-full sm:w-auto px-10 py-5 rounded-full bg-primary-pink text-white font-bold text-lg hover:bg-primary-pink/90 hover:scale-105 transition-all shadow-xl shadow-primary-pink/25 flex items-center justify-center gap-3 active:scale-95">
               <Gift className="w-6 h-6" />
               Start a Celebration
             </Link>
-            <Link href="#charities" className="w-full sm:w-auto px-10 py-5 rounded-full bg-white border-2 border-gray-100 text-gray-900 font-bold text-lg hover:bg-gray-50 transition-all flex items-center justify-center gap-2">
+            <Link href="#charities" className="w-full sm:w-auto px-10 py-5 rounded-full bg-white border-2 border-gray-100 text-gray-900 font-bold text-lg hover:bg-gray-50 hover:scale-105 transition-all flex items-center justify-center gap-2 active:scale-95">
               Browse Charities →
             </Link>
           </div>
@@ -86,10 +94,10 @@ export default function Home() {
               }
             ].map((item, idx) => (
               <div key={idx} className="relative p-10 rounded-[40px] bg-gray-50 border border-gray-100 group hover:bg-white hover:shadow-2xl hover:shadow-gray-200 transition-all duration-500">
-                <span className="text-7xl font-black text-gray-100 absolute top-8 right-10 group-hover:text-primary-pink/5 transition-colors">
+                <span className="text-7xl font-black text-gray-200 absolute top-8 right-10 group-hover:text-primary-pink/10 transition-colors">
                   {item.step}
                 </span>
-                <div className="w-16 h-16 rounded-2xl bg-primary-pink flex items-center justify-center mb-10 shadow-lg shadow-primary-pink/20">
+                <div className="w-16 h-16 rounded-2xl bg-primary-pink flex items-center justify-center mb-10 shadow-lg shadow-primary-pink/20 group-hover:scale-110 transition-transform duration-500">
                   {item.icon}
                 </div>
                 <h4 className="text-2xl font-black text-gray-900 mb-4">{item.title}</h4>
