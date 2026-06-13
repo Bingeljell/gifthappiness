@@ -19,17 +19,20 @@ export default function Header() {
 
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-8">
-          <Link href="#how-it-works" className="text-sm font-semibold text-gray-600 hover:text-primary-pink transition-colors">
+          <Link href="/#how-it-works" className="text-sm font-semibold text-gray-600 hover:text-primary-pink transition-colors">
             How It Works
           </Link>
-          <Link href="#charities" className="text-sm font-semibold text-gray-600 hover:text-primary-pink transition-colors">
+          <Link href="/charities" className="text-sm font-semibold text-gray-600 hover:text-primary-pink transition-colors">
             Browse Charities
+          </Link>
+          <Link href="/about" className="text-sm font-semibold text-gray-600 hover:text-primary-pink transition-colors">
+            About
+          </Link>
+          <Link href="/celebration" className="text-sm font-semibold text-gray-600 hover:text-primary-pink transition-colors">
+            Preview Page
           </Link>
           <Link href="/create" className="text-sm font-semibold text-gray-600 hover:text-primary-pink transition-colors">
             Start a Celebration
-          </Link>
-          <Link href="/signin" className="px-6 py-2.5 rounded-full bg-gray-50 text-sm font-bold text-gray-900 hover:bg-gray-100 transition-all">
-            Sign In
           </Link>
           <Link href="/create" className="px-6 py-2.5 rounded-full bg-primary-pink text-sm font-bold text-white hover:bg-primary-pink/90 transition-all shadow-lg shadow-primary-pink/20">
             Get Started
@@ -48,17 +51,20 @@ export default function Header() {
       {/* Mobile Nav */}
       {isMenuOpen && (
         <div className="md:hidden bg-white border-b border-gray-100 px-4 py-8 flex flex-col gap-6 shadow-xl">
-          <Link href="#how-it-works" className="text-xl font-bold text-gray-900" onClick={() => setIsMenuOpen(false)}>
+          <Link href="/#how-it-works" className="text-xl font-bold text-gray-900" onClick={() => setIsMenuOpen(false)}>
             How It Works
           </Link>
-          <Link href="#charities" className="text-xl font-bold text-gray-900" onClick={() => setIsMenuOpen(false)}>
+          <Link href="/charities" className="text-xl font-bold text-gray-900" onClick={() => setIsMenuOpen(false)}>
             Browse Charities
+          </Link>
+          <Link href="/about" className="text-xl font-bold text-gray-900" onClick={() => setIsMenuOpen(false)}>
+            About
+          </Link>
+          <Link href="/celebration" className="text-xl font-bold text-gray-900" onClick={() => setIsMenuOpen(false)}>
+            Preview Page
           </Link>
           <Link href="/create" className="text-xl font-bold text-gray-900" onClick={() => setIsMenuOpen(false)}>
             Start a Celebration
-          </Link>
-          <Link href="/signin" className="text-xl font-bold text-gray-900" onClick={() => setIsMenuOpen(false)}>
-            Sign In
           </Link>
         </div>
       )}

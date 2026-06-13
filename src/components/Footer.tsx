@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Heart, Globe, Share2, MessageCircle } from "lucide-react";
+import { Heart } from "lucide-react";
 
 export default function Footer() {
   return (
@@ -16,43 +16,33 @@ export default function Footer() {
             <p className="text-gray-600 text-sm leading-relaxed mb-8">
               Turn every celebration into a gift that changes lives. Give joy, give meaning, give happiness.
             </p>
-            <div className="flex items-center gap-4">
-              <Link href="#" className="p-2.5 rounded-full bg-white border border-gray-200 text-gray-400 hover:text-primary-pink hover:border-primary-pink transition-all">
-                <Globe className="w-5 h-5" />
-              </Link>
-              <Link href="#" className="p-2.5 rounded-full bg-white border border-gray-200 text-gray-400 hover:text-primary-pink hover:border-primary-pink transition-all">
-                <Share2 className="w-5 h-5" />
-              </Link>
-              <Link href="#" className="p-2.5 rounded-full bg-white border border-gray-200 text-gray-400 hover:text-primary-pink hover:border-primary-pink transition-all">
-                <MessageCircle className="w-5 h-5" />
-              </Link>
-            </div>
+            <Link href="/about" className="inline-flex items-center text-sm font-bold text-primary-pink hover:underline">
+              Read about the project
+            </Link>
           </div>
 
           <div className="md:col-start-3">
             <h3 className="text-xs font-bold text-gray-900 uppercase tracking-widest mb-8">Platform</h3>
             <ul className="flex flex-col gap-5">
-              <li><Link href="#how-it-works" className="text-gray-500 hover:text-primary-pink text-sm font-medium transition-colors">How It Works</Link></li>
-              <li><Link href="#charities" className="text-gray-500 hover:text-primary-pink text-sm font-medium transition-colors">Browse Charities</Link></li>
+              <li><Link href="/#how-it-works" className="text-gray-500 hover:text-primary-pink text-sm font-medium transition-colors">How It Works</Link></li>
+              <li><Link href="/charities" className="text-gray-500 hover:text-primary-pink text-sm font-medium transition-colors">Browse Charities</Link></li>
               <li><Link href="/create" className="text-gray-500 hover:text-primary-pink text-sm font-medium transition-colors">Start a Celebration</Link></li>
-              <li><Link href="/signin" className="text-gray-500 hover:text-primary-pink text-sm font-medium transition-colors">Sign In</Link></li>
+              <li><Link href="/celebration" className="text-gray-500 hover:text-primary-pink text-sm font-medium transition-colors">Celebration Page</Link></li>
             </ul>
           </div>
 
           <div>
             <h3 className="text-xs font-bold text-gray-900 uppercase tracking-widest mb-8">Company</h3>
             <ul className="flex flex-col gap-5">
-              <li><Link href="#" className="text-gray-500 hover:text-primary-pink text-sm font-medium transition-colors">About Us</Link></li>
-              <li><Link href="#" className="text-gray-500 hover:text-primary-pink text-sm font-medium transition-colors">Contact</Link></li>
-              <li><Link href="#" className="text-gray-500 hover:text-primary-pink text-sm font-medium transition-colors">Privacy Policy</Link></li>
-              <li><Link href="#" className="text-gray-500 hover:text-primary-pink text-sm font-medium transition-colors">Terms of Service</Link></li>
+              <li><Link href="/about" className="text-gray-500 hover:text-primary-pink text-sm font-medium transition-colors">About Us</Link></li>
+              <li><Link href="/about#faq" className="text-gray-500 hover:text-primary-pink text-sm font-medium transition-colors">FAQ</Link></li>
             </ul>
           </div>
         </div>
 
         <div className="border-t border-gray-200 pt-10 flex flex-col md:flex-row justify-between items-center gap-6 text-gray-400 text-xs font-medium">
           <p>© 2026 GiftHappiness. All rights reserved.</p>
-          <p>Made with ❤️ for celebrations that matter</p>
+          <p>Made with care for celebrations that matter</p>
         </div>
       </div>
     </footer>
