@@ -14,7 +14,7 @@ export default function Header() {
           <div className="w-10 h-10 rounded-xl bg-primary-pink flex items-center justify-center rotate-3">
             <Heart className="w-6 h-6 text-white fill-white" />
           </div>
-          <span className="text-2xl font-black text-gray-900 tracking-tight">GiftHappiness</span>
+          <span className="font-brand text-2xl font-bold text-gray-900 tracking-tight">GiftHappiness</span>
         </Link>
 
         {/* Desktop Nav */}

@@ -21,6 +21,12 @@ const playfairDisplay = Playfair_Display({
   subsets: ["latin"],
 });
 
+const playfairBrand = Playfair_Display({
+  variable: "--font-brand",
+  weight: "700",
+  subsets: ["latin"],
+});
+
 export const metadata: Metadata = {
   title: "Gift Happiness - Celebrate with Purpose",
   description: "Turn every celebration into a gift that changes lives. Create a static celebration page preview for charity-first giving.",
@@ -34,7 +40,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${playfairDisplay.variable} h-full antialiased scroll-smooth`}
+      className={`${geistSans.variable} ${geistMono.variable} ${playfairDisplay.variable} ${playfairBrand.variable} h-full antialiased scroll-smooth`}
     >
       <body className="min-h-full flex flex-col bg-creme text-text-main font-sans">
         <Header />
