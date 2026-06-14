@@ -114,7 +114,7 @@ export default function CharitiesPage() {
             {charities.map((charity) => (
               <article key={charity.name} className="bg-white rounded-[32px] border border-gray-100 p-8 shadow-sm">
                 <div className="flex items-start justify-between gap-4 mb-7">
-                  <div className="w-14 h-14 rounded-2xl bg-soft-pink text-primary-pink flex items-center justify-center font-black text-sm">
+                  <div className="w-14 h-14 rounded-full bg-soft-pink text-primary-pink flex items-center justify-center font-black text-sm">
                     {charity.category.slice(0, 2).toUpperCase()}
                   </div>
                   <span className="rounded-full bg-gray-50 border border-gray-100 px-3 py-1 text-xs font-black uppercase tracking-widest text-primary-pink">

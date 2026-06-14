@@ -51,7 +51,7 @@ export default function CelebrationPage() {
             </div>
 
             <div className="bg-white border border-gray-100 rounded-[40px] p-8 shadow-sm">
-              <div className="w-14 h-14 rounded-2xl bg-primary-pink flex items-center justify-center mb-6">
+              <div className="w-14 h-14 rounded-full bg-primary-pink flex items-center justify-center mb-6">
                 <CreditCard className="w-8 h-8 text-white" />
               </div>
               <h2 className="text-3xl font-black text-gray-900 mb-3">Make a contribution</h2>

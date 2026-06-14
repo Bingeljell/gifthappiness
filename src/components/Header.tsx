@@ -11,10 +11,13 @@ export default function Header() {
     <header className="sticky top-0 z-50 w-full bg-creme/90 backdrop-blur-md border-b border-gray-100">
       <div className="container mx-auto px-4 h-20 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
-          <div className="w-10 h-10 rounded-xl bg-primary-pink flex items-center justify-center rotate-3">
+          <div className="w-10 h-10 rounded-full bg-primary-pink flex items-center justify-center rotate-3">
             <Heart className="w-6 h-6 text-white fill-white" />
           </div>
-          <span className="font-brand text-2xl font-bold text-gray-900 tracking-tight">GiftHappiness</span>
+          <span className="font-brand text-2xl font-bold tracking-tight">
+            <span className="text-gray-900">Gift</span>
+            <span className="text-primary-pink">Happiness</span>
+          </span>
         </Link>
 
         {/* Desktop Nav */}

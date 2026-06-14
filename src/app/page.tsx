@@ -113,7 +113,7 @@ export default function Home() {
                 <span className="text-7xl font-black text-gray-200 absolute top-8 right-10 group-hover:text-primary-pink/10 transition-colors">
                   {item.step}
                 </span>
-                <div className="w-16 h-16 rounded-2xl bg-primary-pink flex items-center justify-center mb-10 shadow-lg shadow-primary-pink/20 group-hover:scale-110 transition-transform duration-500">
+                <div className="w-16 h-16 rounded-full bg-primary-pink flex items-center justify-center mb-10 shadow-lg shadow-primary-pink/20 group-hover:scale-110 transition-transform duration-500">
                   {item.icon}
                 </div>
                 <h4 className="text-2xl font-black text-gray-900 mb-4">{item.title}</h4>
@@ -137,7 +137,7 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
             {charities.map((charity) => (
               <div key={charity.name} className="bg-white rounded-[40px] p-10 border border-gray-100 shadow-sm hover:shadow-2xl hover:shadow-gray-200 transition-all duration-500 group">
-                <div className="w-16 h-16 rounded-2xl bg-soft-pink text-primary-pink flex items-center justify-center mb-8 font-black text-sm">
+                <div className="w-16 h-16 rounded-full bg-soft-pink text-primary-pink flex items-center justify-center mb-8 font-black text-sm">
                   {charity.icon}
                 </div>
                 <div className="text-xs font-black text-primary-pink uppercase tracking-widest mb-3">{charity.category}</div>
@@ -150,7 +150,7 @@ export default function Home() {
           <div className="mt-16 bg-white border border-gray-100 rounded-[32px] p-8 md:p-10">
             <div className="flex flex-col lg:flex-row gap-10 lg:items-start lg:justify-between">
               <div className="max-w-lg">
-                <div className="w-14 h-14 rounded-2xl bg-primary-pink flex items-center justify-center mb-6">
+                <div className="w-14 h-14 rounded-full bg-primary-pink flex items-center justify-center mb-6">
                   <ShieldCheck className="w-8 h-8 text-white" />
                 </div>
                 <h4 className="text-3xl font-black text-gray-900 mb-4">How charities are selected</h4>
@@ -180,7 +180,7 @@ export default function Home() {
                 &ldquo;Instead of more things I did not need, my friends donated to a children&apos;s hospital in my name. I cried happy tears all day.&rdquo;
               </p>
               <div className="flex flex-col items-center">
-                <div className="w-20 h-20 rounded-2xl bg-primary-pink flex items-center justify-center mb-6 shadow-xl shadow-primary-pink/30 rotate-3">
+                <div className="w-20 h-20 rounded-full bg-primary-pink flex items-center justify-center mb-6 shadow-xl shadow-primary-pink/30 rotate-3">
                   <Heart className="w-10 h-10 text-white fill-white" />
                 </div>
                 <div className="text-2xl font-black text-gray-900">Sarah M.</div>
