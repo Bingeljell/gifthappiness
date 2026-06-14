@@ -50,6 +50,27 @@ const criteria = [
   "Featured only until a predetermined donation limit is reached.",
 ];
 
+const contributorMessages = [
+  {
+    name: "Ananya R.",
+    celebration: "Aarav's birthday",
+    charity: "UNICEF",
+    message: "Such a thoughtful way to celebrate. Happy birthday, Aarav. This gift feels meaningful.",
+  },
+  {
+    name: "Rohan S.",
+    celebration: "Meera and Kabir's wedding",
+    charity: "WWF",
+    message: "Wishing you both a beautiful life together. Loved contributing to a cause you care about.",
+  },
+  {
+    name: "Anonymous contributor",
+    celebration: "Nisha's anniversary",
+    charity: "Save the Children",
+    message: "Thank you for turning a personal milestone into something that helps others.",
+  },
+];
+
 export default function Home() {
   return (
     <div className="flex flex-col">
@@ -187,6 +208,33 @@ export default function Home() {
                 <div className="text-base font-bold text-primary-pink">50th Birthday</div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-32 bg-[#FFF4ED]">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8 mb-16">
+            <div className="max-w-2xl">
+              <h2 className="text-primary-pink font-black text-sm uppercase tracking-[0.2em] mb-4">Contributor Messages</h2>
+              <h3 className="text-4xl md:text-5xl font-black text-gray-900 leading-tight">Small notes from celebrations with purpose.</h3>
+            </div>
+            <p className="text-gray-600 max-w-md text-lg font-medium leading-relaxed">
+              Across celebrations, friends and family can leave a note with their contribution, with privacy controls for what appears publicly.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {contributorMessages.map((item) => (
+              <article key={`${item.name}-${item.celebration}`} className="bg-white border border-gray-100 rounded-[32px] p-8 shadow-sm">
+                <div className="text-xs font-black text-primary-pink uppercase tracking-widest mb-4">{item.charity}</div>
+                <p className="text-xl font-bold text-gray-900 leading-snug mb-8">&ldquo;{item.message}&rdquo;</p>
+                <div className="border-t border-gray-100 pt-5">
+                  <div className="font-black text-gray-900">{item.name}</div>
+                  <div className="text-sm font-semibold text-gray-500">{item.celebration}</div>
+                </div>
+              </article>
+            ))}
           </div>
         </div>
       </section>

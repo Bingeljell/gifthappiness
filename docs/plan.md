@@ -47,6 +47,12 @@ The backend, database, payments, admin tools, and hosting architecture should be
   - Donation amount
   - Payment link placeholder
 - [x] Mark payment gateway details as undecided in the UI or supporting docs.
+- [x] Add static contributor messages and donor visibility controls:
+  - Cross-celebration messages on the home page
+  - Contributor wall on each celebration page
+  - Name visibility enabled by default
+  - Amount visibility private by default
+  - Anonymous donation option
 
 ## Phase 3: Charity Content
 
