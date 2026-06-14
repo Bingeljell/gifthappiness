@@ -3,6 +3,33 @@
 import Link from "next/link";
 import { CalendarDays, CreditCard, Heart, ShieldCheck } from "lucide-react";
 
+const contributors = [
+  {
+    name: "Ananya R.",
+    amount: "",
+    message: "Happy 50th, Sarah. I love that you chose to make this about helping children.",
+    timing: "Donated today",
+  },
+  {
+    name: "Rahul S.",
+    amount: "INR 2,500",
+    message: "Wishing you a beautiful year ahead. Proud to support UNICEF with you.",
+    timing: "Donated yesterday",
+  },
+  {
+    name: "Anonymous contributor",
+    amount: "",
+    message: "A quiet contribution for a thoughtful celebration.",
+    timing: "Donated 2 days ago",
+  },
+  {
+    name: "Priya and Aman",
+    amount: "",
+    message: "This was a lovely idea. Sending love and warm birthday wishes.",
+    timing: "Donated 3 days ago",
+  },
+];
+
 export default function CelebrationPage() {
   return (
     <div className="bg-creme">
@@ -51,7 +78,7 @@ export default function CelebrationPage() {
             </div>
 
             <div className="bg-white border border-gray-100 rounded-[40px] p-8 shadow-sm">
-              <div className="w-14 h-14 rounded-2xl bg-primary-pink flex items-center justify-center mb-6">
+              <div className="w-14 h-14 rounded-full bg-primary-pink flex items-center justify-center mb-6">
                 <CreditCard className="w-8 h-8 text-white" />
               </div>
               <h2 className="text-3xl font-black text-gray-900 mb-3">Make a contribution</h2>
@@ -64,6 +91,16 @@ export default function CelebrationPage() {
                 <Field id="donor-mobile" label="Mobile number" placeholder="+91 98765 43210" inputMode="tel" />
                 <Field id="pan" label="PAN number if required" placeholder="Required above eligible limits" />
                 <Field id="amount" label="Donation amount" placeholder="e.g. 5000" inputMode="numeric" />
+
+                <fieldset className="rounded-3xl bg-gray-50 border border-gray-100 p-5 space-y-4">
+                  <legend className="text-sm font-black text-gray-900 mb-3">Visibility preferences</legend>
+                  <Checkbox id="show-name" label="Show my name on this celebration page" defaultChecked />
+                  <Checkbox id="show-amount" label="Show my donation amount publicly" />
+                  <Checkbox id="anonymous" label="Donate anonymously" />
+                  <p className="text-xs text-gray-500 leading-relaxed">
+                    Names are visible by default and can be hidden. Amounts stay private unless the contributor chooses to share them.
+                  </p>
+                </fieldset>
 
                 <button
                   type="button"
@@ -84,6 +121,43 @@ export default function CelebrationPage() {
               <Link href="/create" className="mt-8 inline-block text-primary-pink font-black hover:underline">
                 Create another celebration
               </Link>
+            </div>
+          </div>
+
+          <div className="mt-12 bg-white border border-gray-100 rounded-[40px] p-8 md:p-12 shadow-sm">
+            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-10">
+              <div>
+                <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-3">People celebrating Sarah</h2>
+                <p className="text-gray-600 font-medium leading-relaxed max-w-2xl">
+                  The creator can choose whether this contributor wall is visible. Contributors can also control whether their name or amount appears.
+                </p>
+              </div>
+              <div className="rounded-full bg-soft-pink px-5 py-2 text-sm font-black text-primary-pink">
+                {contributors.length} contributors so far
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {contributors.map((contributor) => (
+                <article key={`${contributor.name}-${contributor.timing}`} className="rounded-3xl bg-gray-50 border border-gray-100 p-6">
+                  <div className="flex items-start justify-between gap-4 mb-5">
+                    <div>
+                      <h3 className="text-xl font-black text-gray-900">{contributor.name}</h3>
+                      <p className="text-sm font-semibold text-gray-500">{contributor.timing}</p>
+                    </div>
+                    {contributor.amount ? (
+                      <span className="rounded-full bg-white border border-gray-200 px-3 py-1 text-xs font-black text-primary-pink">
+                        {contributor.amount}
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-white border border-gray-200 px-3 py-1 text-xs font-black text-gray-400">
+                        Amount private
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-gray-700 font-medium leading-relaxed">&ldquo;{contributor.message}&rdquo;</p>
+                </article>
+              ))}
             </div>
           </div>
         </div>
@@ -124,5 +198,27 @@ function Field({
         className="w-full px-5 py-4 rounded-2xl bg-white border border-primary-pink/10 focus:border-primary-pink/30 focus:ring-4 focus:ring-primary-pink/5 outline-none transition-all text-primary-pink placeholder:text-primary-pink/30"
       />
     </div>
+  );
+}
+
+function Checkbox({
+  id,
+  label,
+  defaultChecked = false,
+}: {
+  id: string;
+  label: string;
+  defaultChecked?: boolean;
+}) {
+  return (
+    <label htmlFor={id} className="flex items-start gap-3 text-sm font-semibold text-gray-700">
+      <input
+        id={id}
+        type="checkbox"
+        defaultChecked={defaultChecked}
+        className="mt-0.5 h-4 w-4 rounded border-gray-300 accent-primary-pink"
+      />
+      <span>{label}</span>
+    </label>
   );
 }

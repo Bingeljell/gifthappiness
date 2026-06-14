@@ -18,3 +18,5 @@
 - 2026-06-13 > src/components/Header.tsx, src/components/Footer.tsx, and src/app/page.tsx > navigation > routed Browse Charities actions to the new `/charities` page.
 - 2026-06-13 > src/app/celebration/page.tsx > CelebrationPage > added a UNICEF context block to make the preview celebration page feel more complete.
 - 2026-06-13 > docs/plan.md > charity content > marked the minimum charity profile content task complete and clarified that individual charity detail pages remain undecided.
+- 2026-06-14 > src/components/Header.tsx, src/components/Footer.tsx, src/app/create/page.tsx, src/app/page.tsx, src/app/about/page.tsx, src/app/celebration/page.tsx, and src/app/charities/page.tsx > visual styling > split the GiftHappiness wordmark color, changed icon containers to circles, and softened the Create page background and text palette.
+- 2026-06-14 > src/app/page.tsx, src/app/celebration/page.tsx, and docs/plan.md > contributor visibility > added cross-celebration contributor messages, a celebration-specific contributor wall, and donor visibility controls with amount privacy by default.

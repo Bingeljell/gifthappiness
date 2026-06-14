@@ -8,10 +8,13 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-16 mb-20">
           <div className="col-span-1 md:col-span-1">
             <Link href="/" className="flex items-center gap-2 mb-8">
-              <div className="w-8 h-8 rounded-lg bg-primary-pink flex items-center justify-center">
+              <div className="w-8 h-8 rounded-full bg-primary-pink flex items-center justify-center">
                 <Heart className="w-5 h-5 text-white fill-white" />
               </div>
-              <span className="text-xl font-black text-gray-900 tracking-tight">GiftHappiness</span>
+              <span className="font-brand text-xl font-bold tracking-tight">
+                <span className="text-gray-900">Gift</span>
+                <span className="text-primary-pink">Happiness</span>
+              </span>
             </Link>
             <p className="text-gray-600 text-sm leading-relaxed mb-8">
               Turn every celebration into a gift that changes lives. Give joy, give meaning, give happiness.

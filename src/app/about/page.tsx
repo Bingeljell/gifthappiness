@@ -44,10 +44,10 @@ export default function AboutPage() {
                 About GiftHappiness
               </div>
               <h1 className="text-5xl md:text-7xl font-black text-gray-900 mb-8 leading-tight tracking-tight">
-                A simple idea by Dalai.
+                A simple idea by a 12 year old.
               </h1>
               <p className="text-xl text-gray-600 leading-relaxed font-medium mb-8">
-                GiftHappiness is an attempt by 12 year old Dalai to make people happy: people happy by receiving, and people happy by giving.
+                GiftHappiness is an attempt by 12 year old to make people happy: people happy by receiving, and people happy by giving.
               </p>
               <p className="text-xl text-gray-600 leading-relaxed font-medium">
                 It is a simple idea to share the celebrations of our lives with the world.
@@ -55,7 +55,7 @@ export default function AboutPage() {
             </div>
 
             <div className="bg-white border border-gray-100 rounded-[40px] p-8 md:p-10 shadow-sm">
-              <div className="w-16 h-16 rounded-2xl bg-primary-pink flex items-center justify-center mb-8">
+              <div className="w-16 h-16 rounded-full bg-primary-pink flex items-center justify-center mb-8">
                 <ShieldCheck className="w-9 h-9 text-white" />
               </div>
               <h2 className="text-3xl font-black text-gray-900 mb-5">Charity-first principles</h2>
