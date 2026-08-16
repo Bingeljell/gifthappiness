@@ -146,23 +146,27 @@ Known tradeoffs:
 Backend work items:
 
 - [x] Pick provisional backend direction: Cloudflare + Supabase.
-- [ ] Create a Supabase project on the free tier.
-- [ ] Define initial database schema:
+- [x] Define initial database schema (`supabase/schema.sql`, not yet applied to a live project):
   - hosts/users
   - charities
   - celebrations
   - contributors
   - contribution visibility preferences
   - payment references or pending payment records
-- [ ] Define Cloudflare Worker API routes for:
+- [x] Define Cloudflare Worker API routes for (`workers/src/routes/`, not yet deployed):
   - creating a celebration
   - reading a public celebration page
   - submitting contribution details
-  - verifying email or one-time links
+  - verifying one-time codes (OTP request/verify; SMS dispatch itself is still pending a provider — see below)
   - admin-only charity/content updates
+- [ ] Create a Supabase project on the free tier and apply `supabase/schema.sql`.
+- [ ] Set `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY`/`ADMIN_API_KEY` and run `wrangler dev`/`wrangler deploy` from `workers/` (see `workers/wrangler.toml` for the exact steps).
+- [ ] Point the Next.js frontend at the deployed Worker instead of the static dummy data in `src/lib/charities.ts` and the static `/create` and `/celebration` pages.
+- [ ] Pick an OTP/SMS provider and wire actual dispatch into `workers/src/routes/otp.ts` (the route and storage exist; only the send step is a TODO).
 - [ ] Decide whether image uploads use Supabase Storage or Cloudflare R2.
 - [ ] Define data retention and privacy requirements.
 - [ ] Define audit logging needs for admin actions.
+- [ ] Replace the `ADMIN_API_KEY` shared-secret gate on `/admin/*` routes with real role-based auth once the CMS/Admin roles below are decided.
 
 ## CMS And Admin Direction
 
