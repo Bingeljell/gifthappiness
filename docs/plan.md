@@ -40,11 +40,11 @@ The backend, database, payments, admin tools, and hosting architecture should be
 
 The header/footer today do not yet match the nav specified in the updated docs.
 
-- [ ] Add an **Impact** page/section to the nav (public totals, SDG framing — see the new Transparency phase below).
-- [ ] Give **FAQ** its own top-level nav entry (currently only reachable via `/about#faq`); decide whether it stays merged into About or becomes `/faq`.
-- [ ] Add a visible but non-functional **Sign In** nav placeholder (no auth exists yet; make that explicit in the UI rather than omitting the item).
-- [ ] Remove or relabel the dev-only "Preview Page" nav link before this becomes a real IA — it is not part of the documented nav.
-- [ ] Add footer pages/stubs for: **Contact**, **For Charities**, **Privacy Policy**, **Terms of Service**, **Refund/Donation Policy**, **Charity Selection Policy**, **Transparency and SDGs**. None of these exist today, even as placeholders.
+- [x] Add an **Impact** page/section to the nav (public totals, SDG framing — see the new Transparency phase below).
+- [x] Give **FAQ** its own top-level nav entry: kept the content merged into `/about#faq` and added a direct nav link rather than duplicating content at `/faq`.
+- [x] Add a visible but non-functional **Sign In** nav placeholder (no auth exists yet; made that explicit in the UI rather than omitting the item).
+- [x] Remove the dev-only "Preview Page" nav link; `/celebration` is still reachable from the footer's Platform column.
+- [x] Add footer pages/stubs for: **Contact**, **For Charities**, **Privacy Policy**, **Terms of Service**, **Refund/Donation Policy**, **Charity Selection Policy**, **Transparency and SDGs**.
 
 ## Phase 2: Static Forms And Pages
 
@@ -78,9 +78,9 @@ The header/footer today do not yet match the nav specified in the updated docs.
 
 ### Phase 2 follow-up: flow gaps found against `website_dev.md` §7 and §15
 
-- [ ] Rebuild `/create` as the documented three-step flow (Host & Occasion → Cause & Page → Preview & Publish) instead of one long static form. Step 3 needs a rendered preview of the celebration page before "publish."
-- [ ] Add a QR code preview/placeholder to the create flow's publish step (client-side generation against the static demo URL; no backend needed).
-- [ ] Align the celebration-page CTA copy with the suggested line in `website_dev.md` §8 ("Instead of gifts, please consider supporting a cause close to my heart.") or confirm the current wording is an intentional departure.
+- [x] Rebuild `/create` as the documented three-step flow (Host & Occasion → Cause & Page → Preview & Publish) instead of one long static form. Step 3 renders a live preview of the celebration page before "publish."
+- [x] Add a QR code preview to the create flow's publish step, via `qrcode.react` (client-side, static demo URL, no backend). "Publish" stays disabled — no submission target exists yet.
+- [x] Aligned the celebration-page quote with the suggested line in `website_dev.md` §8.
 
 ## Phase 3: Charity Content
 
@@ -94,28 +94,28 @@ The header/footer today do not yet match the nav specified in the updated docs.
   - Donation limit/status
   - Verification notes
 - [x] Decide whether each charity needs an individual dedicated page before launch: **yes** — `website_dev.md` §11 now specifies a full charity detail page (logo, what/who/why, SDGs, impact examples, amount raised, allocation status, "Choose this Charity" CTA). Build as a static dynamic route (`/charities/[slug]`) with dummy data.
-- [ ] Build the `/charities/[slug]` detail page per the spec above.
-- [ ] Add SDG tags to each charity (`master_docs.md` §10) on both the directory card and the detail page.
-- [ ] Define how charities rotate out after reaching the predetermined limit.
+- [x] Build the `/charities/[slug]` detail page per the spec above (static, via `generateStaticParams`, dummy data in `src/lib/charities.ts`).
+- [x] Add SDG tags to each charity (`master_docs.md` §10) on both the directory card and the detail page.
+- [ ] Define how charities rotate out after reaching the predetermined limit. (UI copy explains the mechanic; actual rotation logic needs real data/backend in Phase 5.)
 
 ## Phase 3b: Transparency And Impact (new — `master_docs.md` §9, §10, §12)
 
 The docs treat public transparency as a core trust mechanic, not a later add-on. None of this exists on the site yet. All of it can ship as static/dummy data in this phase; it becomes real data once Supabase is wired up in Phase 5.
 
-- [ ] Add an **Impact** page: per-charity amount raised (dummy figures), allocation ceiling, active/completed status — the public answer to "where is the money going?"
-- [ ] Add SDG framing content: a short explainer of how celebrations map to UN SDGs, referenced from charity cards/detail pages and the Impact page.
-- [ ] Add an amount-raised/status pill to charity directory cards (dummy data now, same shape the real data will use later).
+- [x] Add an **Impact** page: per-charity amount raised (dummy figures), allocation ceiling, active/completed status — the public answer to "where is the money going?"
+- [x] Add SDG framing content: a short explainer of how celebrations map to UN SDGs, referenced from charity cards/detail pages and the Impact page.
+- [x] Add an amount-raised/status pill to charity directory cards (dummy data now, same shape the real data will use later).
 
 ## Phase 3c: Legal And Informational Pages (new — footer requirement)
 
 Stub pages so the footer links specified in `master_docs.md`/`website_dev.md` are not dead links. Content stays placeholder/"final wording pending legal review" until Phase 5/legal work resolves it — this mirrors how the Create form already marks OTP/payment as pending.
 
-- [ ] `/privacy` — placeholder Privacy Policy page.
-- [ ] `/terms` — placeholder Terms of Service page.
-- [ ] `/refund-policy` — placeholder Refund/Donation Policy page.
-- [ ] `/charity-selection-policy` — placeholder Charity Selection Policy page (can reuse the existing vetting-criteria content).
-- [ ] `/contact` — static contact page.
-- [ ] `/for-charities` — static page describing how a charity gets listed/vetted, aimed at NGO partners rather than donors.
+- [x] `/privacy` — placeholder Privacy Policy page.
+- [x] `/terms` — placeholder Terms of Service page.
+- [x] `/refund-policy` — placeholder Refund/Donation Policy page.
+- [x] `/charity-selection-policy` — placeholder Charity Selection Policy page (reuses the existing vetting-criteria content).
+- [x] `/contact` — static contact page (no email fabricated; states a contact channel isn't finalized yet).
+- [x] `/for-charities` — static page describing how a charity gets listed/vetted, aimed at NGO partners rather than donors.
 
 ## Phase 4: Design Pass
 
