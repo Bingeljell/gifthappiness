@@ -4,15 +4,19 @@ import Link from "next/link";
 import { useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import {
+  AlertCircle,
   Calendar,
   Check,
   ChevronLeft,
   ChevronRight,
   Heart,
   ImagePlus,
+  Loader2,
+  Mail,
   ShieldCheck,
 } from "lucide-react";
 import { charities } from "@/lib/charities";
+import { confirmVerification, createCelebration, requestVerification } from "@/lib/api";
 
 const celebrationTypes = [
   "Birthday",
@@ -35,6 +39,7 @@ const steps = [
 
 type FormState = {
   hostName: string;
+  email: string;
   mobile: string;
   address: string;
   celebrationType: string;
@@ -48,6 +53,7 @@ type FormState = {
 
 const initialForm: FormState = {
   hostName: "",
+  email: "",
   mobile: "",
   address: "",
   celebrationType: celebrationTypes[0],
@@ -59,9 +65,26 @@ const initialForm: FormState = {
   pictureName: "",
 };
 
+type VerificationState =
+  | { status: "idle" }
+  | { status: "sending" }
+  | { status: "sent" }
+  | { status: "verifying" }
+  | { status: "verified" }
+  | { status: "error"; message: string };
+
+type PublishState =
+  | { status: "idle" }
+  | { status: "submitting" }
+  | { status: "success"; slug: string }
+  | { status: "error"; message: string };
+
 export default function CreateCelebration() {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<FormState>(initialForm);
+  const [verification, setVerification] = useState<VerificationState>({ status: "idle" });
+  const [verificationCode, setVerificationCode] = useState("");
+  const [publish, setPublish] = useState<PublishState>({ status: "idle" });
 
   const update = (field: keyof FormState, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -69,6 +92,45 @@ export default function CreateCelebration() {
 
   const goNext = () => setStep((s) => Math.min(s + 1, steps.length - 1));
   const goBack = () => setStep((s) => Math.max(s - 1, 0));
+
+  const sendVerificationEmail = async () => {
+    if (!form.email) {
+      setVerification({ status: "error", message: "Enter an email address first" });
+      return;
+    }
+    setVerification({ status: "sending" });
+    const result = await requestVerification("email", form.email, "host_signup");
+    setVerification(result.ok ? { status: "sent" } : { status: "error", message: result.error });
+  };
+
+  const confirmVerificationCode = async () => {
+    if (!verificationCode) return;
+    setVerification({ status: "verifying" });
+    const result = await confirmVerification("email", form.email, "host_signup", verificationCode);
+    if (result.ok && result.data.verified) {
+      setVerification({ status: "verified" });
+    } else {
+      setVerification({ status: "error", message: result.ok ? "Verification failed" : result.error });
+    }
+  };
+
+  const publishCelebration = async () => {
+    const charity = charities.find((c) => c.name === form.charityName) ?? charities[0];
+    setPublish({ status: "submitting" });
+    const result = await createCelebration({
+      hostName: form.hostName || "Anonymous host",
+      hostEmail: form.email,
+      hostMobile: form.mobile,
+      hostAddress: form.address || undefined,
+      celebrationType: form.celebrationType,
+      celebrationDate: form.celebrationDate || undefined,
+      charitySlug: charity.slug,
+      activeFrom: form.activeFrom || undefined,
+      activeTill: form.activeTill || undefined,
+      message: form.message || undefined,
+    });
+    setPublish(result.ok ? { status: "success", slug: result.data.celebration.slug } : { status: "error", message: result.error });
+  };
 
   return (
     <div className="min-h-[calc(100vh-80px)] py-12 px-4 relative overflow-hidden">
@@ -118,13 +180,24 @@ export default function CreateCelebration() {
           </div>
 
           <p className="text-sm text-gray-500 mb-8">
-            This static prototype collects no data and sends nothing anywhere. Backend, OTP, image upload, and
-            payment details are still pending product decisions.
+            This form calls a live GiftHappiness API. No backend is deployed yet, so requests are expected to fail
+            until then &mdash; that&apos;s normal at this stage. Image upload and payment details are still pending
+            product decisions.
           </p>
 
-          {step === 0 && <StepHostOccasion form={form} update={update} />}
+          {step === 0 && (
+            <StepHostOccasion
+              form={form}
+              update={update}
+              verification={verification}
+              verificationCode={verificationCode}
+              onVerificationCodeChange={setVerificationCode}
+              onSendVerification={sendVerificationEmail}
+              onConfirmVerification={confirmVerificationCode}
+            />
+          )}
           {step === 1 && <StepCauseAndPage form={form} update={update} />}
-          {step === 2 && <StepPreviewAndPublish form={form} />}
+          {step === 2 && <StepPreviewAndPublish form={form} publish={publish} />}
 
           <div className="flex items-center justify-between mt-10 pt-8 border-t border-gray-100">
             <button
@@ -149,11 +222,12 @@ export default function CreateCelebration() {
             ) : (
               <button
                 type="button"
-                disabled
-                className="flex items-center gap-2 px-8 py-4 rounded-2xl bg-gray-100 text-gray-400 font-bold cursor-not-allowed"
-                title="Publishing is not available yet on this static prototype"
+                onClick={publishCelebration}
+                disabled={publish.status === "submitting" || publish.status === "success"}
+                className="flex items-center gap-2 px-8 py-4 rounded-2xl bg-primary-pink text-white font-bold hover:bg-primary-pink/90 transition-all shadow-lg shadow-primary-pink/20 disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                Publish (Coming Soon)
+                {publish.status === "submitting" && <Loader2 className="w-5 h-5 animate-spin" />}
+                {publish.status === "success" ? "Published" : "Publish"}
               </button>
             )}
           </div>
@@ -174,9 +248,19 @@ export default function CreateCelebration() {
 function StepHostOccasion({
   form,
   update,
+  verification,
+  verificationCode,
+  onVerificationCodeChange,
+  onSendVerification,
+  onConfirmVerification,
 }: {
   form: FormState;
   update: (field: keyof FormState, value: string) => void;
+  verification: VerificationState;
+  verificationCode: string;
+  onVerificationCodeChange: (value: string) => void;
+  onSendVerification: () => void;
+  onConfirmVerification: () => void;
 }) {
   return (
     <div className="space-y-6">
@@ -212,11 +296,78 @@ function StepHostOccasion({
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-end">
-        <Field id="otp" label="OTP verification" placeholder="Verification will be added later" inputMode="numeric" value="" onChange={() => {}} disabled />
-        <button type="button" disabled className="px-6 py-4 rounded-2xl bg-gray-100 text-gray-400 font-bold cursor-not-allowed">
-          Verify OTP
-        </button>
+      <div className="rounded-2xl bg-[#FFF4ED] border border-gray-100 p-5 space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-end">
+          <Field
+            id="email"
+            label="Email (used to verify you)"
+            placeholder="you@example.com"
+            type="email"
+            inputMode="email"
+            value={form.email}
+            onChange={(v) => update("email", v)}
+            disabled={verification.status === "verified"}
+          />
+          <button
+            type="button"
+            onClick={onSendVerification}
+            disabled={verification.status === "sending" || verification.status === "verified"}
+            className="flex items-center justify-center gap-2 px-6 py-4 rounded-2xl bg-gray-900 text-white font-bold hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {verification.status === "sending" && <Loader2 className="w-4 h-4 animate-spin" />}
+            {verification.status === "verified" ? (
+              <>
+                <Check className="w-4 h-4" /> Verified
+              </>
+            ) : (
+              <>
+                <Mail className="w-4 h-4" /> Verify Email
+              </>
+            )}
+          </button>
+        </div>
+
+        {(verification.status === "sent" || verification.status === "verifying") && (
+          <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
+            <div className="flex-1">
+              <label htmlFor="verification-code" className="text-sm font-bold text-gray-600 uppercase tracking-widest ml-1">
+                Verification code
+              </label>
+              <input
+                id="verification-code"
+                inputMode="numeric"
+                placeholder="6-digit code"
+                value={verificationCode}
+                onChange={(e) => onVerificationCodeChange(e.target.value)}
+                className="w-full mt-2 px-6 py-4 rounded-2xl bg-white border border-gray-200 focus:border-primary-pink/30 focus:ring-4 focus:ring-primary-pink/5 outline-none transition-all text-gray-900 placeholder:text-gray-400"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={onConfirmVerification}
+              disabled={verification.status === "verifying"}
+              className="px-6 py-4 rounded-2xl bg-primary-pink text-white font-bold hover:bg-primary-pink/90 transition-colors disabled:opacity-60"
+            >
+              {verification.status === "verifying" ? "Confirming..." : "Confirm"}
+            </button>
+          </div>
+        )}
+
+        {verification.status === "error" && (
+          <p className="flex items-start gap-2 text-sm font-semibold text-primary-pink">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            {verification.message}
+          </p>
+        )}
+        {verification.status === "sent" && (
+          <p className="text-xs text-gray-500">
+            A code was requested. Actual email delivery isn&apos;t wired up yet, so check{" "}
+            <code>workers/src/routes/verification.ts</code> once a provider is chosen.
+          </p>
+        )}
+        <p className="text-xs text-gray-400">
+          Mobile OTP verification is deferred for now; email is the active verification path.
+        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -313,49 +464,66 @@ function StepCauseAndPage({
   );
 }
 
-function StepPreviewAndPublish({ form }: { form: FormState }) {
+function StepPreviewAndPublish({ form, publish }: { form: FormState; publish: PublishState }) {
   const charity = charities.find((c) => c.name === form.charityName) ?? charities[0];
   const displayName = form.hostName || "Your name";
   const demoUrl = "https://gifthappiness.example/celebration/demo";
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-8">
-      <div className="rounded-[32px] bg-gray-50 border border-gray-100 p-8">
-        <div className="inline-flex items-center gap-2 px-4 py-2 mb-6 rounded-full bg-soft-pink text-primary-pink text-xs font-bold uppercase tracking-widest">
-          <Calendar className="w-4 h-4" />
-          Celebration Page Preview
+    <div className="space-y-6">
+      {publish.status === "success" && (
+        <div className="flex items-start gap-3 rounded-2xl bg-green-50 border border-green-200 p-5 text-green-800">
+          <Check className="w-5 h-5 shrink-0 mt-0.5" />
+          <p className="text-sm font-semibold">
+            Created as <code>{publish.slug}</code>. It&apos;s saved as a draft in the database.
+          </p>
+        </div>
+      )}
+      {publish.status === "error" && (
+        <div className="flex items-start gap-3 rounded-2xl bg-primary-pink/5 border border-primary-pink/20 p-5 text-primary-pink">
+          <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+          <p className="text-sm font-semibold">{publish.message}</p>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-8">
+        <div className="rounded-[32px] bg-gray-50 border border-gray-100 p-8">
+          <div className="inline-flex items-center gap-2 px-4 py-2 mb-6 rounded-full bg-soft-pink text-primary-pink text-xs font-bold uppercase tracking-widest">
+            <Calendar className="w-4 h-4" />
+            Celebration Page Preview
+          </div>
+
+          <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-6 leading-tight">
+            {displayName}&apos;s {form.celebrationType || "Celebration"}
+          </h2>
+
+          {form.message && (
+            <p className="text-lg font-bold text-gray-900 italic mb-6 leading-snug">&ldquo;{form.message}&rdquo;</p>
+          )}
+
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <PreviewField label="Date" value={form.celebrationDate || "Not set"} />
+            <PreviewField label="Charity" value={charity.name} />
+            <PreviewField label="Active from" value={form.activeFrom || "Not set"} />
+            <PreviewField label="Active till" value={form.activeTill || "Not set"} />
+          </div>
+
+          <div className="rounded-2xl bg-white border border-gray-100 p-5 text-sm text-gray-600 leading-relaxed">
+            Supporting {charity.name} ({charity.category}). {charity.shortDescription}
+          </div>
         </div>
 
-        <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-6 leading-tight">
-          {displayName}&apos;s {form.celebrationType || "Celebration"}
-        </h2>
-
-        {form.message && (
-          <p className="text-lg font-bold text-gray-900 italic mb-6 leading-snug">&ldquo;{form.message}&rdquo;</p>
-        )}
-
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <PreviewField label="Date" value={form.celebrationDate || "Not set"} />
-          <PreviewField label="Charity" value={charity.name} />
-          <PreviewField label="Active from" value={form.activeFrom || "Not set"} />
-          <PreviewField label="Active till" value={form.activeTill || "Not set"} />
+        <div className="rounded-[32px] bg-white border border-gray-100 p-6 flex flex-col items-center text-center">
+          <ShieldCheck className="w-6 h-6 text-primary-pink mb-3" />
+          <h3 className="font-black text-gray-900 mb-2">Share via QR</h3>
+          <p className="text-xs text-gray-500 mb-5 leading-relaxed">
+            Demo QR only &mdash; publishing and a real per-celebration link are not live yet.
+          </p>
+          <div className="p-3 bg-white border border-gray-100 rounded-2xl">
+            <QRCodeSVG value={demoUrl} size={140} />
+          </div>
+          <p className="text-[11px] text-gray-400 mt-4 break-all">{demoUrl}</p>
         </div>
-
-        <div className="rounded-2xl bg-white border border-gray-100 p-5 text-sm text-gray-600 leading-relaxed">
-          Supporting {charity.name} ({charity.category}). {charity.shortDescription}
-        </div>
-      </div>
-
-      <div className="rounded-[32px] bg-white border border-gray-100 p-6 flex flex-col items-center text-center">
-        <ShieldCheck className="w-6 h-6 text-primary-pink mb-3" />
-        <h3 className="font-black text-gray-900 mb-2">Share via QR</h3>
-        <p className="text-xs text-gray-500 mb-5 leading-relaxed">
-          Demo QR only &mdash; publishing and a real per-celebration link are not live yet.
-        </p>
-        <div className="p-3 bg-white border border-gray-100 rounded-2xl">
-          <QRCodeSVG value={demoUrl} size={140} />
-        </div>
-        <p className="text-[11px] text-gray-400 mt-4 break-all">{demoUrl}</p>
       </div>
     </div>
   );
