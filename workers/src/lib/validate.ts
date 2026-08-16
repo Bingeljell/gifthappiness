@@ -19,6 +19,16 @@ export function optionalString(value: unknown, field: string, { maxLength = 2000
   return requireString(value, field, { maxLength });
 }
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export function requireEmail(value: unknown, field = "email"): string {
+  const email = requireString(value, field, { maxLength: 254 });
+  if (!EMAIL_PATTERN.test(email)) {
+    throw new ValidationError(`${field} must be a valid email address`);
+  }
+  return email.toLowerCase();
+}
+
 const MOBILE_PATTERN = /^\+?[0-9]{10,15}$/;
 
 export function requireMobile(value: unknown, field = "mobile"): string {

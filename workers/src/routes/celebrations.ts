@@ -1,6 +1,6 @@
 import { getSupabaseClient } from "../lib/supabase";
 import { json, errorResponse } from "../lib/response";
-import { readJsonBody, requireString, requireMobile, optionalString, ValidationError } from "../lib/validate";
+import { readJsonBody, requireString, requireEmail, requireMobile, optionalString, ValidationError } from "../lib/validate";
 import type { Env } from "../lib/env";
 
 function slugify(text: string): string {
@@ -12,7 +12,7 @@ function slugify(text: string): string {
 }
 
 // POST /celebrations
-// Creates (or reuses) a host by mobile number, then a draft celebration.
+// Creates (or reuses) a host by email, then a draft celebration.
 // Status stays "draft" until OTP verification and publish are wired up —
 // this route only covers the "creating a celebration" item from
 // docs/plan.md's Worker API route list.
@@ -21,6 +21,7 @@ export async function createCelebration(request: Request, env: Env): Promise<Res
     const body = await readJsonBody(request);
 
     const hostName = requireString(body.hostName, "hostName");
+    const hostEmail = requireEmail(body.hostEmail, "hostEmail");
     const hostMobile = requireMobile(body.hostMobile, "hostMobile");
     const hostAddress = optionalString(body.hostAddress, "hostAddress");
     const celebrationType = requireString(body.celebrationType, "celebrationType");
@@ -42,17 +43,20 @@ export async function createCelebration(request: Request, env: Env): Promise<Res
       return errorResponse("Unknown charity", env, 404);
     }
 
+    // Email is the host's identity/verification key now (see docs/plan.md's
+    // OTP-to-email deviation note); mobile is still collected but not used
+    // for lookups.
     const { data: existingHost } = await supabase
       .from("hosts")
       .select("id")
-      .eq("mobile", hostMobile)
+      .eq("email", hostEmail)
       .maybeSingle();
 
     let hostId = existingHost?.id as string | undefined;
     if (!hostId) {
       const { data: newHost, error: hostError } = await supabase
         .from("hosts")
-        .insert({ name: hostName, mobile: hostMobile, address: hostAddress })
+        .insert({ name: hostName, email: hostEmail, mobile: hostMobile, address: hostAddress })
         .select("id")
         .single();
 

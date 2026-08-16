@@ -2,7 +2,7 @@ import type { Env } from "./lib/env";
 import { corsHeaders, errorResponse, json } from "./lib/response";
 import { createCelebration, getCelebration } from "./routes/celebrations";
 import { submitContribution } from "./routes/contributions";
-import { requestOtp, verifyOtp } from "./routes/otp";
+import { requestVerification, confirmVerification } from "./routes/verification";
 import { listCharitiesAdmin, createCharity, updateCharity } from "./routes/admin";
 
 // Hand-rolled routing: the route count here doesn't justify pulling in a
@@ -36,14 +36,14 @@ const worker = {
       return submitContribution(segments[1], request, env);
     }
 
-    // POST /otp/request
-    if (method === "POST" && segments.length === 2 && segments[0] === "otp" && segments[1] === "request") {
-      return requestOtp(request, env);
+    // POST /verify/request
+    if (method === "POST" && segments.length === 2 && segments[0] === "verify" && segments[1] === "request") {
+      return requestVerification(request, env);
     }
 
-    // POST /otp/verify
-    if (method === "POST" && segments.length === 2 && segments[0] === "otp" && segments[1] === "verify") {
-      return verifyOtp(request, env);
+    // POST /verify/confirm
+    if (method === "POST" && segments.length === 2 && segments[0] === "verify" && segments[1] === "confirm") {
+      return confirmVerification(request, env);
     }
 
     // GET/POST /admin/charities, PATCH /admin/charities/:slug

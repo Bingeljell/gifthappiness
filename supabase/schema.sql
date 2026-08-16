@@ -5,10 +5,10 @@
 -- Supabase project once one exists: `supabase db push` or paste into the SQL editor.
 --
 -- Design notes:
--- * Hosts are NOT tied to Supabase Auth yet. The plan still lists "Supabase Auth
---   or an email verification flow" as an open decision, and mobile OTP verification
---   is being handled by GiftHappiness's own otp_verifications table below rather
---   than Supabase's phone-auth product, so the choice stays open.
+-- * Hosts are NOT tied to Supabase Auth yet. Host verification currently runs
+--   over email via GiftHappiness's own `verifications` table below (mobile
+--   OTP is deferred, not removed -- see that table's comment). Whether to
+--   move to Supabase Auth later is still an open decision in docs/plan.md.
 -- * All public-facing reads go through views (celebrations_public,
 --   contributions_public) that only expose what's meant to be public. Base
 --   tables are only readable/writable by the service role (i.e. the Worker),
@@ -20,15 +20,22 @@ create extension if not exists "pgcrypto";
 
 -- ---------------------------------------------------------------------------
 -- hosts: people who create a celebration
+--
+-- Verification currently happens over email (see `verifications` below);
+-- mobile OTP is deferred, so mobile stays collected but unverified for now.
 -- ---------------------------------------------------------------------------
 create table if not exists hosts (
   id uuid primary key default gen_random_uuid(),
   name text not null,
+  email text not null,
+  email_verified boolean not null default false,
   mobile text not null,
   mobile_verified boolean not null default false,
   address text,
   created_at timestamptz not null default now()
 );
+
+create unique index if not exists hosts_email_idx on hosts (email);
 
 -- ---------------------------------------------------------------------------
 -- charities: mirrors the shape already used as dummy data in
@@ -102,13 +109,19 @@ create table if not exists contributions (
 create index if not exists contributions_celebration_id_idx on contributions (celebration_id);
 
 -- ---------------------------------------------------------------------------
--- otp_verifications: short-lived codes for host/contributor mobile verification.
--- Actual SMS dispatch depends on an OTP provider, still an open decision in
--- docs/plan.md ("OTP provider"). This table only tracks issued/verified codes.
+-- verifications: short-lived codes for host/contributor verification.
+--
+-- Channel-generic on purpose: email verification is the active path right
+-- now (host sign-up), and mobile OTP is deferred rather than removed, so it
+-- can be turned on later for the same purposes just by picking an SMS
+-- provider and dispatching to channel='mobile' rows -- no schema change
+-- needed. Actual dispatch (email send / SMS send) is a TODO in the Worker
+-- either way; this table only tracks issued/verified codes.
 -- ---------------------------------------------------------------------------
-create table if not exists otp_verifications (
+create table if not exists verifications (
   id uuid primary key default gen_random_uuid(),
-  mobile text not null,
+  channel text not null check (channel in ('email', 'mobile')),
+  contact text not null,
   purpose text not null check (purpose in ('host_signup', 'contribution')),
   code_hash text not null,
   expires_at timestamptz not null,
@@ -116,7 +129,7 @@ create table if not exists otp_verifications (
   created_at timestamptz not null default now()
 );
 
-create index if not exists otp_verifications_mobile_purpose_idx on otp_verifications (mobile, purpose);
+create index if not exists verifications_contact_purpose_idx on verifications (channel, contact, purpose);
 
 -- ---------------------------------------------------------------------------
 -- Row Level Security
@@ -131,7 +144,7 @@ alter table hosts enable row level security;
 alter table charities enable row level security;
 alter table celebrations enable row level security;
 alter table contributions enable row level security;
-alter table otp_verifications enable row level security;
+alter table verifications enable row level security;
 
 -- No policies are created for anon/authenticated roles on the base tables:
 -- with RLS enabled and zero policies, all access is denied by default except
