@@ -28,15 +28,24 @@ export default function Header() {
           <Link href="/charities" className="text-sm font-semibold text-gray-600 hover:text-primary-pink transition-colors">
             Browse Charities
           </Link>
+          <Link href="/impact" className="text-sm font-semibold text-gray-600 hover:text-primary-pink transition-colors">
+            Impact
+          </Link>
           <Link href="/about" className="text-sm font-semibold text-gray-600 hover:text-primary-pink transition-colors">
             About
           </Link>
-          <Link href="/celebration" className="text-sm font-semibold text-gray-600 hover:text-primary-pink transition-colors">
-            Preview Page
+          <Link href="/about#faq" className="text-sm font-semibold text-gray-600 hover:text-primary-pink transition-colors">
+            FAQ
           </Link>
           <Link href="/create" className="text-sm font-semibold text-gray-600 hover:text-primary-pink transition-colors">
             Start a Celebration
           </Link>
+          <span
+            className="text-sm font-semibold text-gray-300 cursor-not-allowed select-none"
+            title="Sign in is not available yet"
+          >
+            Sign In
+          </span>
           <Link href="/create" className="px-6 py-2.5 rounded-full bg-primary-pink text-sm font-bold text-white hover:bg-primary-pink/90 transition-all shadow-lg shadow-primary-pink/20">
             Get Started
           </Link>
@@ -60,15 +69,21 @@ export default function Header() {
           <Link href="/charities" className="text-xl font-bold text-gray-900" onClick={() => setIsMenuOpen(false)}>
             Browse Charities
           </Link>
+          <Link href="/impact" className="text-xl font-bold text-gray-900" onClick={() => setIsMenuOpen(false)}>
+            Impact
+          </Link>
           <Link href="/about" className="text-xl font-bold text-gray-900" onClick={() => setIsMenuOpen(false)}>
             About
           </Link>
-          <Link href="/celebration" className="text-xl font-bold text-gray-900" onClick={() => setIsMenuOpen(false)}>
-            Preview Page
+          <Link href="/about#faq" className="text-xl font-bold text-gray-900" onClick={() => setIsMenuOpen(false)}>
+            FAQ
           </Link>
           <Link href="/create" className="text-xl font-bold text-gray-900" onClick={() => setIsMenuOpen(false)}>
             Start a Celebration
           </Link>
+          <span className="text-xl font-bold text-gray-300" title="Sign in is not available yet">
+            Sign In
+          </span>
         </div>
       )}
     </header>
