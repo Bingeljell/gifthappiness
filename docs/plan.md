@@ -147,7 +147,7 @@ Backend work items:
 
 - [x] Pick provisional backend direction: Cloudflare + Supabase.
 - [x] Define initial database schema (`supabase/schema.sql`, not yet applied to a live project):
-  - hosts/users
+  - hosts/users (now includes email as the verification identity — see deviation note below)
   - charities
   - celebrations
   - contributors
@@ -157,16 +157,20 @@ Backend work items:
   - creating a celebration
   - reading a public celebration page
   - submitting contribution details
-  - verifying one-time codes (OTP request/verify; SMS dispatch itself is still pending a provider — see below)
+  - verifying a contact (email now, mobile OTP deferred — see below)
   - admin-only charity/content updates
+- [x] Wire the Next.js frontend to the Worker API (`src/lib/api.ts`, `NEXT_PUBLIC_API_BASE_URL` in `.env.example`): `/create`'s email verification and Publish step, and `/celebration`'s donor form, all make real requests. With no backend deployed, every request fails gracefully with a "backend isn't deployed yet" message instead of throwing — this is the expected state until Supabase/the Worker exist. `/charities`, `/impact`, and the rest of the site still read the static dummy data in `src/lib/charities.ts` (not wired, no live equivalent yet).
 - [ ] Create a Supabase project on the free tier and apply `supabase/schema.sql`.
 - [ ] Set `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY`/`ADMIN_API_KEY` and run `wrangler dev`/`wrangler deploy` from `workers/` (see `workers/wrangler.toml` for the exact steps).
-- [ ] Point the Next.js frontend at the deployed Worker instead of the static dummy data in `src/lib/charities.ts` and the static `/create` and `/celebration` pages.
-- [ ] Pick an OTP/SMS provider and wire actual dispatch into `workers/src/routes/otp.ts` (the route and storage exist; only the send step is a TODO).
+- [ ] Set a real `NEXT_PUBLIC_API_BASE_URL` in `.env.local` once the Worker is deployed (copy `.env.example`).
+- [ ] Point `/charities`, `/charities/[slug]`, and `/impact` at the deployed Worker instead of `src/lib/charities.ts`'s static dummy data.
+- [ ] Pick an OTP/SMS provider and wire actual dispatch into `workers/src/routes/verification.ts` for the `mobile` channel (the route and storage already support it; only the send step is a TODO).
 - [ ] Decide whether image uploads use Supabase Storage or Cloudflare R2.
 - [ ] Define data retention and privacy requirements.
 - [ ] Define audit logging needs for admin actions.
 - [ ] Replace the `ADMIN_API_KEY` shared-secret gate on `/admin/*` routes with real role-based auth once the CMS/Admin roles below are decided.
+
+**Deviation from `master_docs.md`/`website_dev.md`: OTP → email verification.** Both docs describe host verification as mobile OTP. Per an explicit product decision, host verification now runs over email instead — the `hosts` table has `email`/`email_verified` columns, and the Worker's `verifications` table is channel-generic (`email` | `mobile`) specifically so mobile OTP can be turned back on later (per the docs) just by wiring an SMS provider, with no schema or route changes. `/create`'s "OTP verification" field/button was replaced with an "Email (used to verify you)" field and a Verify Email flow. Mobile number is still collected on both host and donor forms, just not used for verification right now.
 
 ## CMS And Admin Direction
 
