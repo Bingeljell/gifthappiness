@@ -7,7 +7,7 @@ import { listCharitiesAdmin, createCharity, updateCharity } from "./routes/admin
 
 // Hand-rolled routing: the route count here doesn't justify pulling in a
 // router library. Revisit if this grows past a dozen or so routes.
-export default {
+const worker = {
   async fetch(request: Request, env: Env): Promise<Response> {
     if (request.method === "OPTIONS") {
       return new Response(null, { status: 204, headers: corsHeaders(env) });
@@ -56,3 +56,5 @@ export default {
     return errorResponse("Not found", env, 404);
   },
 };
+
+export default worker;
