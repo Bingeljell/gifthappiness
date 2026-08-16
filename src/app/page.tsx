@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Gift, Heart, Quote, ShieldCheck, Share2 } from "lucide-react";
+import { charities as allCharities } from "@/lib/charities";
 
 const steps = [
   {
@@ -22,26 +23,22 @@ const steps = [
   },
 ];
 
-const charities = [
-  {
-    name: "UNICEF",
-    category: "Children",
-    desc: "Protecting children's rights and providing life-saving support to kids in need worldwide.",
-    icon: "Children",
-  },
-  {
-    name: "WWF",
-    category: "Environment",
-    desc: "Conserving nature and reducing the most pressing threats to the diversity of life on Earth.",
-    icon: "Earth",
-  },
-  {
-    name: "Medecins Sans Frontieres",
-    category: "Health",
-    desc: "Delivering emergency medical care to people affected by conflict, disease, and disaster.",
-    icon: "Care",
-  },
-];
+const featuredIconLabels: Record<string, string> = {
+  unicef: "Children",
+  wwf: "Earth",
+  "medecins-sans-frontieres": "Care",
+};
+
+const charities = Object.keys(featuredIconLabels).map((slug) => {
+  const charity = allCharities.find((item) => item.slug === slug)!;
+  return {
+    slug: charity.slug,
+    name: charity.name,
+    category: charity.category,
+    desc: charity.shortDescription,
+    icon: featuredIconLabels[slug],
+  };
+});
 
 const criteria = [
   "Registered NGO or charity.",
@@ -157,14 +154,18 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
             {charities.map((charity) => (
-              <div key={charity.name} className="bg-white rounded-[40px] p-10 border border-gray-100 shadow-sm hover:shadow-2xl hover:shadow-gray-200 transition-all duration-500 group">
+              <Link
+                key={charity.slug}
+                href={`/charities/${charity.slug}`}
+                className="bg-white rounded-[40px] p-10 border border-gray-100 shadow-sm hover:shadow-2xl hover:shadow-gray-200 transition-all duration-500 group block"
+              >
                 <div className="w-16 h-16 rounded-full bg-soft-pink text-primary-pink flex items-center justify-center mb-8 font-black text-sm">
                   {charity.icon}
                 </div>
                 <div className="text-xs font-black text-primary-pink uppercase tracking-widest mb-3">{charity.category}</div>
                 <h4 className="text-3xl font-black text-gray-900 mb-6">{charity.name}</h4>
                 <p className="text-gray-600 text-base leading-relaxed font-medium">{charity.desc}</p>
-              </div>
+              </Link>
             ))}
           </div>
 
