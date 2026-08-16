@@ -1,0 +1,58 @@
+import type { Env } from "./lib/env";
+import { corsHeaders, errorResponse, json } from "./lib/response";
+import { createCelebration, getCelebration } from "./routes/celebrations";
+import { submitContribution } from "./routes/contributions";
+import { requestOtp, verifyOtp } from "./routes/otp";
+import { listCharitiesAdmin, createCharity, updateCharity } from "./routes/admin";
+
+// Hand-rolled routing: the route count here doesn't justify pulling in a
+// router library. Revisit if this grows past a dozen or so routes.
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    if (request.method === "OPTIONS") {
+      return new Response(null, { status: 204, headers: corsHeaders(env) });
+    }
+
+    const url = new URL(request.url);
+    const segments = url.pathname.split("/").filter(Boolean);
+    const method = request.method;
+
+    if (method === "GET" && segments.length === 1 && segments[0] === "health") {
+      return json({ status: "ok" }, env);
+    }
+
+    // POST /celebrations
+    if (method === "POST" && segments.length === 1 && segments[0] === "celebrations") {
+      return createCelebration(request, env);
+    }
+
+    // GET /celebrations/:slug
+    if (method === "GET" && segments.length === 2 && segments[0] === "celebrations") {
+      return getCelebration(segments[1], env);
+    }
+
+    // POST /celebrations/:slug/contributions
+    if (method === "POST" && segments.length === 3 && segments[0] === "celebrations" && segments[2] === "contributions") {
+      return submitContribution(segments[1], request, env);
+    }
+
+    // POST /otp/request
+    if (method === "POST" && segments.length === 2 && segments[0] === "otp" && segments[1] === "request") {
+      return requestOtp(request, env);
+    }
+
+    // POST /otp/verify
+    if (method === "POST" && segments.length === 2 && segments[0] === "otp" && segments[1] === "verify") {
+      return verifyOtp(request, env);
+    }
+
+    // GET/POST /admin/charities, PATCH /admin/charities/:slug
+    if (segments[0] === "admin" && segments[1] === "charities") {
+      if (method === "GET" && segments.length === 2) return listCharitiesAdmin(request, env);
+      if (method === "POST" && segments.length === 2) return createCharity(request, env);
+      if (method === "PATCH" && segments.length === 3) return updateCharity(segments[2], request, env);
+    }
+
+    return errorResponse("Not found", env, 404);
+  },
+};
