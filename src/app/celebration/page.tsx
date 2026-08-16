@@ -48,7 +48,7 @@ export default function CelebrationPage() {
 
               <div className="rounded-3xl bg-gray-50 border border-gray-100 p-6 mb-8">
                 <p className="text-2xl md:text-3xl font-bold text-gray-900 leading-snug italic">
-                  &ldquo;This year, your contribution to a cause close to my heart would mean more than any gift.&rdquo;
+                  &ldquo;Instead of gifts, please consider supporting a cause close to my heart.&rdquo;
                 </p>
               </div>
 
