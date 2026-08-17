@@ -2,6 +2,7 @@
 
 # dependencies
 /node_modules
+/workers/node_modules
 /.pnp
 .pnp.*
 .yarn/*
@@ -32,9 +33,21 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
+
+# cloudflare workers local dev state
+/workers/.wrangler
+
+# supabase CLI local state
+/supabase/.temp
+/workers/supabase
+
+# local-only secrets generated during backend setup (never commit)
+/workers/.supabase-db-password
+/workers/.admin-api-key
 
 # typescript
 *.tsbuildinfo

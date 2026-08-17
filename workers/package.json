@@ -1,0 +1,19 @@
+{
+  "name": "gift-happiness-workers",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Cloudflare Worker API for GiftHappiness. Not deployed yet; see docs/plan.md Phase 5.",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.4"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250109.0",
+    "typescript": "^5",
+    "wrangler": "^3.99.0"
+  }
+}

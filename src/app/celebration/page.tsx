@@ -1,7 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { CalendarDays, CreditCard, Heart, ShieldCheck } from "lucide-react";
+import { useState, type FormEvent } from "react";
+import { AlertCircle, CalendarDays, Check, CreditCard, Heart, Loader2, ShieldCheck } from "lucide-react";
+import { submitContribution } from "@/lib/api";
+
+// This page is a single static demo, not routed by a real celebration slug
+// yet (see docs/plan.md Phase 5). Contributions submitted here are recorded
+// against this placeholder slug until /celebration/[slug] exists.
+const DEMO_CELEBRATION_SLUG = "demo";
 
 const contributors = [
   {
@@ -30,7 +37,63 @@ const contributors = [
   },
 ];
 
+type DonorForm = {
+  name: string;
+  mobile: string;
+  email: string;
+  pan: string;
+  amount: string;
+  message: string;
+  showName: boolean;
+  showAmount: boolean;
+  anonymous: boolean;
+};
+
+const initialDonorForm: DonorForm = {
+  name: "",
+  mobile: "",
+  email: "",
+  pan: "",
+  amount: "",
+  message: "",
+  showName: true,
+  showAmount: false,
+  anonymous: false,
+};
+
+type SubmitState = { status: "idle" } | { status: "submitting" } | { status: "success" } | { status: "error"; message: string };
+
 export default function CelebrationPage() {
+  const [donor, setDonor] = useState<DonorForm>(initialDonorForm);
+  const [submit, setSubmit] = useState<SubmitState>({ status: "idle" });
+
+  const updateDonor = <K extends keyof DonorForm>(field: K, value: DonorForm[K]) => {
+    setDonor((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubmit = async (event: FormEvent) => {
+    event.preventDefault();
+    const amount = Number(donor.amount);
+    if (!donor.name || !donor.mobile || !Number.isFinite(amount) || amount <= 0) {
+      setSubmit({ status: "error", message: "Name, mobile number, and a positive amount are required." });
+      return;
+    }
+
+    setSubmit({ status: "submitting" });
+    const result = await submitContribution(DEMO_CELEBRATION_SLUG, {
+      donorName: donor.name,
+      donorMobile: donor.mobile,
+      donorEmail: donor.email || undefined,
+      pan: donor.pan || undefined,
+      amount,
+      message: donor.message || undefined,
+      showName: donor.showName,
+      showAmount: donor.showAmount,
+      anonymous: donor.anonymous,
+    });
+    setSubmit(result.ok ? { status: "success" } : { status: "error", message: result.error });
+  };
+
   return (
     <div className="bg-creme">
       <section className="py-20 md:py-28">
@@ -48,7 +111,7 @@ export default function CelebrationPage() {
 
               <div className="rounded-3xl bg-gray-50 border border-gray-100 p-6 mb-8">
                 <p className="text-2xl md:text-3xl font-bold text-gray-900 leading-snug italic">
-                  &ldquo;This year, your contribution to a cause close to my heart would mean more than any gift.&rdquo;
+                  &ldquo;Instead of gifts, please consider supporting a cause close to my heart.&rdquo;
                 </p>
               </div>
 
@@ -83,31 +146,68 @@ export default function CelebrationPage() {
               </div>
               <h2 className="text-3xl font-black text-gray-900 mb-3">Make a contribution</h2>
               <p className="text-gray-600 font-medium leading-relaxed mb-8">
-                This is a static donor form preview. Payment gateway details are still being finalized.
+                This form calls the live contributions API to record your intent to give. No payment is processed
+                yet &mdash; the payment gateway is still being finalized.
               </p>
 
-              <form className="space-y-5" onSubmit={(event) => event.preventDefault()}>
-                <Field id="donor-name" label="Name of donor" placeholder="Your name" />
-                <Field id="donor-mobile" label="Mobile number" placeholder="+91 98765 43210" inputMode="tel" />
-                <Field id="pan" label="PAN number if required" placeholder="Required above eligible limits" />
-                <Field id="amount" label="Donation amount" placeholder="e.g. 5000" inputMode="numeric" />
+              <form className="space-y-5" onSubmit={handleSubmit}>
+                <Field id="donor-name" label="Name of donor" placeholder="Your name" value={donor.name} onChange={(v) => updateDonor("name", v)} />
+                <Field
+                  id="donor-mobile"
+                  label="Mobile number"
+                  placeholder="+91 98765 43210"
+                  inputMode="tel"
+                  value={donor.mobile}
+                  onChange={(v) => updateDonor("mobile", v)}
+                />
+                <Field
+                  id="donor-email"
+                  label="Email (optional, for receipt)"
+                  placeholder="you@example.com"
+                  inputMode="email"
+                  value={donor.email}
+                  onChange={(v) => updateDonor("email", v)}
+                />
+                <Field id="pan" label="PAN number if required" placeholder="Required above eligible limits" value={donor.pan} onChange={(v) => updateDonor("pan", v)} />
+                <Field id="amount" label="Donation amount" placeholder="e.g. 5000" inputMode="numeric" value={donor.amount} onChange={(v) => updateDonor("amount", v)} />
+                <Field
+                  id="donor-message"
+                  label="Message (optional)"
+                  placeholder="A note for the host"
+                  value={donor.message}
+                  onChange={(v) => updateDonor("message", v)}
+                />
 
                 <fieldset className="rounded-3xl bg-gray-50 border border-gray-100 p-5 space-y-4">
                   <legend className="text-sm font-black text-gray-900 mb-3">Visibility preferences</legend>
-                  <Checkbox id="show-name" label="Show my name on this celebration page" defaultChecked />
-                  <Checkbox id="show-amount" label="Show my donation amount publicly" />
-                  <Checkbox id="anonymous" label="Donate anonymously" />
+                  <Checkbox id="show-name" label="Show my name on this celebration page" checked={donor.showName} onChange={(v) => updateDonor("showName", v)} />
+                  <Checkbox id="show-amount" label="Show my donation amount publicly" checked={donor.showAmount} onChange={(v) => updateDonor("showAmount", v)} />
+                  <Checkbox id="anonymous" label="Donate anonymously" checked={donor.anonymous} onChange={(v) => updateDonor("anonymous", v)} />
                   <p className="text-xs text-gray-500 leading-relaxed">
                     Names are visible by default and can be hidden. Amounts stay private unless the contributor chooses to share them.
                   </p>
                 </fieldset>
 
+                {submit.status === "error" && (
+                  <p className="flex items-start gap-2 text-sm font-semibold text-primary-pink">
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                    {submit.message}
+                  </p>
+                )}
+                {submit.status === "success" && (
+                  <p className="flex items-start gap-2 text-sm font-semibold text-green-700">
+                    <Check className="w-4 h-4 shrink-0 mt-0.5" />
+                    Recorded as pending. No payment gateway is connected yet, so nothing was charged.
+                  </p>
+                )}
+
                 <button
-                  type="button"
-                  disabled
-                  className="w-full py-5 rounded-2xl bg-gray-100 text-gray-400 font-bold cursor-not-allowed flex items-center justify-center gap-2"
+                  type="submit"
+                  disabled={submit.status === "submitting"}
+                  className="w-full py-5 rounded-2xl bg-primary-pink text-white font-bold hover:bg-primary-pink/90 transition-all shadow-lg shadow-primary-pink/20 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  Payment Link Pending
+                  {submit.status === "submitting" && <Loader2 className="w-5 h-5 animate-spin" />}
+                  Record My Contribution
                 </button>
               </form>
 
@@ -180,11 +280,15 @@ function Field({
   label,
   placeholder,
   inputMode,
+  value,
+  onChange,
 }: {
   id: string;
   label: string;
   placeholder?: string;
   inputMode?: "text" | "tel" | "url" | "email" | "numeric" | "decimal" | "search";
+  value: string;
+  onChange: (value: string) => void;
 }) {
   return (
     <div className="space-y-2">
@@ -195,6 +299,8 @@ function Field({
         id={id}
         placeholder={placeholder}
         inputMode={inputMode}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
         className="w-full px-5 py-4 rounded-2xl bg-white border border-primary-pink/10 focus:border-primary-pink/30 focus:ring-4 focus:ring-primary-pink/5 outline-none transition-all text-primary-pink placeholder:text-primary-pink/30"
       />
     </div>
@@ -204,18 +310,21 @@ function Field({
 function Checkbox({
   id,
   label,
-  defaultChecked = false,
+  checked,
+  onChange,
 }: {
   id: string;
   label: string;
-  defaultChecked?: boolean;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
 }) {
   return (
     <label htmlFor={id} className="flex items-start gap-3 text-sm font-semibold text-gray-700">
       <input
         id={id}
         type="checkbox"
-        defaultChecked={defaultChecked}
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
         className="mt-0.5 h-4 w-4 rounded border-gray-300 accent-primary-pink"
       />
       <span>{label}</span>

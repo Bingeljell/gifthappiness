@@ -24,13 +24,14 @@ export default function Footer() {
             </Link>
           </div>
 
-          <div className="md:col-start-3">
+          <div>
             <h3 className="text-xs font-bold text-gray-900 uppercase tracking-widest mb-8">Platform</h3>
             <ul className="flex flex-col gap-5">
               <li><Link href="/#how-it-works" className="text-gray-500 hover:text-primary-pink text-sm font-medium transition-colors">How It Works</Link></li>
               <li><Link href="/charities" className="text-gray-500 hover:text-primary-pink text-sm font-medium transition-colors">Browse Charities</Link></li>
               <li><Link href="/create" className="text-gray-500 hover:text-primary-pink text-sm font-medium transition-colors">Start a Celebration</Link></li>
               <li><Link href="/celebration" className="text-gray-500 hover:text-primary-pink text-sm font-medium transition-colors">Celebration Page</Link></li>
+              <li><Link href="/impact" className="text-gray-500 hover:text-primary-pink text-sm font-medium transition-colors">Transparency and SDGs</Link></li>
             </ul>
           </div>
 
@@ -39,6 +40,18 @@ export default function Footer() {
             <ul className="flex flex-col gap-5">
               <li><Link href="/about" className="text-gray-500 hover:text-primary-pink text-sm font-medium transition-colors">About Us</Link></li>
               <li><Link href="/about#faq" className="text-gray-500 hover:text-primary-pink text-sm font-medium transition-colors">FAQ</Link></li>
+              <li><Link href="/contact" className="text-gray-500 hover:text-primary-pink text-sm font-medium transition-colors">Contact</Link></li>
+              <li><Link href="/for-charities" className="text-gray-500 hover:text-primary-pink text-sm font-medium transition-colors">For Charities</Link></li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="text-xs font-bold text-gray-900 uppercase tracking-widest mb-8">Legal</h3>
+            <ul className="flex flex-col gap-5">
+              <li><Link href="/privacy" className="text-gray-500 hover:text-primary-pink text-sm font-medium transition-colors">Privacy Policy</Link></li>
+              <li><Link href="/terms" className="text-gray-500 hover:text-primary-pink text-sm font-medium transition-colors">Terms of Service</Link></li>
+              <li><Link href="/refund-policy" className="text-gray-500 hover:text-primary-pink text-sm font-medium transition-colors">Refund/Donation Policy</Link></li>
+              <li><Link href="/charity-selection-policy" className="text-gray-500 hover:text-primary-pink text-sm font-medium transition-colors">Charity Selection Policy</Link></li>
             </ul>
           </div>
         </div>
