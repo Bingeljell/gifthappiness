@@ -2,16 +2,22 @@ name = "gift-happiness-api"
 main = "src/index.ts"
 compatibility_date = "2025-01-01"
 
-# Not deployed yet. Once a Cloudflare account + Supabase project exist:
-#   1. `wrangler login`
-#   2. `wrangler secret put SUPABASE_SERVICE_ROLE_KEY`
-#   3. `wrangler secret put ADMIN_API_KEY`
-#   4. Fill in SUPABASE_URL and ALLOWED_ORIGIN below (these are not secret).
-#   5. `npm run deploy`
+# Deployed: https://gift-happiness-api.nikhil-shahane.workers.dev (see
+# docs/plan.md Phase 5). ALLOWED_ORIGIN is still the local dev origin below
+# until a production frontend domain exists -- update it then.
+#
+# To redeploy after code changes: `npm run deploy` from workers/.
+# Secrets already set (`wrangler secret put ...`) don't need to be re-set
+# unless they change.
 
 [vars]
-SUPABASE_URL = "https://YOUR-PROJECT.supabase.co"
-ALLOWED_ORIGIN = "https://gifthappiness.example"
+SUPABASE_URL = "https://fsradcbnqocpvxqwizdt.supabase.co"
+# CORS is single-origin only (see workers/src/lib/response.ts corsHeaders) --
+# this only allows the Production Pages URL. Cloudflare Pages Preview
+# deployments (random <hash>.gifthappiness.pages.dev subdomains) will be
+# CORS-blocked until corsHeaders supports multiple/wildcard origins; local
+# dev also needs a manual switch back to http://localhost:3000 for now.
+ALLOWED_ORIGIN = "https://gifthappiness.pages.dev"
 
 # Secrets (set via `wrangler secret put`, never committed):
 #   SUPABASE_SERVICE_ROLE_KEY - Supabase service role key, bypasses RLS; Worker-only.
