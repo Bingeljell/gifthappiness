@@ -36,10 +36,13 @@ create extension if not exists "pgcrypto";
 -- ---------------------------------------------------------------------------
 create table if not exists users (
   id uuid primary key default gen_random_uuid(),
-  name text not null,
+  -- name/mobile are nullable: a login-only signup (POST /auth/request) has
+  -- neither yet. Both become required in practice once that user creates a
+  -- celebration or donates (those forms collect them directly).
+  name text,
   email text not null,
   email_verified boolean not null default false,
-  mobile text not null,
+  mobile text,
   mobile_verified boolean not null default false,
   address text,
   is_admin boolean not null default false,
