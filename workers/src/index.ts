@@ -3,6 +3,8 @@ import { corsHeaders, errorResponse, json } from "./lib/response";
 import { createCelebration, getCelebration } from "./routes/celebrations";
 import { submitContribution } from "./routes/contributions";
 import { requestVerification, confirmVerification } from "./routes/verification";
+import { requestLogin, confirmLogin, getMe, logout } from "./routes/auth";
+import { listMyCelebrations } from "./routes/me";
 import { listCharitiesAdmin, createCharity, updateCharity } from "./routes/admin";
 
 // Hand-rolled routing: the route count here doesn't justify pulling in a
@@ -44,6 +46,31 @@ const worker = {
     // POST /verify/confirm
     if (method === "POST" && segments.length === 2 && segments[0] === "verify" && segments[1] === "confirm") {
       return confirmVerification(request, env);
+    }
+
+    // POST /auth/request
+    if (method === "POST" && segments.length === 2 && segments[0] === "auth" && segments[1] === "request") {
+      return requestLogin(request, env);
+    }
+
+    // POST /auth/confirm
+    if (method === "POST" && segments.length === 2 && segments[0] === "auth" && segments[1] === "confirm") {
+      return confirmLogin(request, env);
+    }
+
+    // GET /auth/me
+    if (method === "GET" && segments.length === 2 && segments[0] === "auth" && segments[1] === "me") {
+      return getMe(request, env);
+    }
+
+    // POST /auth/logout
+    if (method === "POST" && segments.length === 2 && segments[0] === "auth" && segments[1] === "logout") {
+      return logout(request, env);
+    }
+
+    // GET /me/celebrations
+    if (method === "GET" && segments.length === 2 && segments[0] === "me" && segments[1] === "celebrations") {
+      return listMyCelebrations(request, env);
     }
 
     // GET/POST /admin/charities, PATCH /admin/charities/:slug
