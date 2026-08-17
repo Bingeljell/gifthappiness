@@ -1,24 +1,12 @@
 import { getSupabaseClient } from "../lib/supabase";
 import { json, errorResponse } from "../lib/response";
 import { readJsonBody, requireString, requireEmail, requireMobile, ValidationError } from "../lib/validate";
+import { generateCode, hashCode } from "../lib/code";
 import type { Env } from "../lib/env";
 
 const CODE_TTL_MINUTES = 15;
 const VALID_PURPOSES = new Set(["host_signup", "contribution"]);
 const VALID_CHANNELS = new Set(["email", "mobile"]);
-
-function generateCode(): string {
-  const bytes = new Uint32Array(1);
-  crypto.getRandomValues(bytes);
-  return String(100000 + (bytes[0] % 900000));
-}
-
-async function hashCode(code: string): Promise<string> {
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(code));
-  return Array.from(new Uint8Array(digest))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-}
 
 function requirePurpose(value: unknown): string {
   const purpose = requireString(value, "purpose");
@@ -121,7 +109,7 @@ export async function confirmVerification(request: Request, env: Env): Promise<R
     await supabase.from("verifications").update({ verified_at: new Date().toISOString() }).eq("id", candidate.id);
 
     if (channel === "email" && purpose === "host_signup") {
-      await supabase.from("hosts").update({ email_verified: true }).eq("email", contact);
+      await supabase.from("users").update({ email_verified: true }).eq("email", contact);
     }
 
     return json({ verified: true }, env);
