@@ -41,6 +41,14 @@ yarn-error.log*
 # cloudflare workers local dev state
 /workers/.wrangler
 
+# supabase CLI local state
+/supabase/.temp
+/workers/supabase
+
+# local-only secrets generated during backend setup (never commit)
+/workers/.supabase-db-password
+/workers/.admin-api-key
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
