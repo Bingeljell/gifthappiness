@@ -254,3 +254,35 @@ export function adminCreateCharity(token: string, input: AdminCreateCharityInput
     body: JSON.stringify(input),
   });
 }
+
+// PATCH /admin/charities/:slug expects raw DB column names (snake_case),
+// unlike POST /admin/charities above -- matches workers/src/routes/admin.ts's
+// updateCharity, which reads allowedFields directly off the request body.
+export type AdminUpdateCharityInput = Partial<{
+  name: string;
+  category: string;
+  status: string;
+  short_description: string;
+  what_they_do: string;
+  who_they_help: string;
+  why_selected: string;
+  impact_example: string;
+  sdgs: string[];
+  amount_raised: number;
+  registration: string;
+  years_active: number | null;
+  verification_notes: string;
+  website: string;
+}>;
+
+export function adminUpdateCharity(
+  token: string,
+  slug: string,
+  input: AdminUpdateCharityInput,
+): Promise<ApiResult<{ charity: AdminCharity }>> {
+  return apiFetch(`/admin/charities/${encodeURIComponent(slug)}`, {
+    method: "PATCH",
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify(input),
+  });
+}
