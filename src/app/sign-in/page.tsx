@@ -96,10 +96,7 @@ export default function SignInPage() {
                 className="w-full mt-2 px-6 py-4 rounded-2xl bg-white border border-gray-200 focus:border-primary-pink/30 focus:ring-4 focus:ring-primary-pink/5 outline-none transition-all text-gray-900 placeholder:text-gray-400"
               />
             </div>
-            <p className="text-xs text-gray-500 px-1">
-              Actual email delivery isn&apos;t wired up yet, so check <code>workers/src/routes/auth.ts</code> once a provider is
-              chosen.
-            </p>
+            <p className="text-xs text-gray-500 px-1">Check your email for the code. It expires in 15 minutes.</p>
             <button
               type="button"
               onClick={onConfirmCode}
