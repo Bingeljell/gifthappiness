@@ -21,7 +21,7 @@ type FormState = {
   whoTheyHelp: string;
   whySelected: string;
   impactExample: string;
-  ceiling: string;
+  website: string;
   registration: string;
   yearsActive: string;
   verificationNotes: string;
@@ -36,7 +36,7 @@ const initialForm: FormState = {
   whoTheyHelp: "",
   whySelected: "",
   impactExample: "",
-  ceiling: "",
+  website: "",
   registration: "",
   yearsActive: "",
   verificationNotes: "",
@@ -65,17 +65,12 @@ export default function AddCharityForm({ token, onCreated }: { token: string; on
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    const ceiling = Number(form.ceiling);
     if (!form.name || !form.category || !form.shortDescription || !form.whatTheyDo || !form.whoTheyHelp || !form.whySelected) {
       setSubmit({ status: "error", message: "Fill in all the required fields before adding this charity." });
       return;
     }
     if (!slug) {
       setSubmit({ status: "error", message: "Charity name must contain at least one letter or number." });
-      return;
-    }
-    if (!Number.isFinite(ceiling) || ceiling <= 0) {
-      setSubmit({ status: "error", message: "Fundraising goal must be a positive number." });
       return;
     }
 
@@ -90,7 +85,7 @@ export default function AddCharityForm({ token, onCreated }: { token: string; on
       whySelected: form.whySelected,
       impactExample: form.impactExample || undefined,
       sdgs: form.sdgs,
-      ceiling,
+      website: form.website || undefined,
       registration: form.registration || undefined,
       yearsActive: form.yearsActive ? Number(form.yearsActive) : undefined,
       verificationNotes: form.verificationNotes || undefined,
@@ -135,23 +130,47 @@ export default function AddCharityForm({ token, onCreated }: { token: string; on
 
         <FormField id="charity-category" label="Category" placeholder="e.g. Education, Health, Environment" value={form.category} onChange={(v) => update("category", v)} />
         <FormField id="charity-summary" label="One-line summary" value={form.shortDescription} onChange={(v) => update("shortDescription", v)} />
-        <FormField id="charity-what" label="What they do" textarea value={form.whatTheyDo} onChange={(v) => update("whatTheyDo", v)} />
-        <FormField id="charity-who" label="Who they help" textarea value={form.whoTheyHelp} onChange={(v) => update("whoTheyHelp", v)} />
-        <FormField id="charity-why" label="Why we selected them" textarea value={form.whySelected} onChange={(v) => update("whySelected", v)} />
+        <FormField
+          id="charity-what"
+          label="What they do"
+          textarea
+          hint="One point per line -- shown as a bulleted list."
+          placeholder={"e.g.\nRuns free medical clinics\nProvides emergency shelter"}
+          value={form.whatTheyDo}
+          onChange={(v) => update("whatTheyDo", v)}
+        />
+        <FormField
+          id="charity-who"
+          label="Who they help"
+          textarea
+          hint="One point per line -- shown as a bulleted list."
+          placeholder={"e.g.\nFamilies affected by disaster\nChildren without access to school"}
+          value={form.whoTheyHelp}
+          onChange={(v) => update("whoTheyHelp", v)}
+        />
+        <FormField
+          id="charity-why"
+          label="Why we selected them"
+          textarea
+          hint="One point per line -- shown as a bulleted list."
+          value={form.whySelected}
+          onChange={(v) => update("whySelected", v)}
+        />
         <FormField
           id="charity-impact"
           label="Impact example (optional)"
           textarea
+          hint="One point per line -- shown as a bulleted list."
           value={form.impactExample}
           onChange={(v) => update("impactExample", v)}
         />
 
         <FormField
-          id="charity-ceiling"
-          label="Fundraising goal (₹)"
-          inputMode="numeric"
-          value={form.ceiling}
-          onChange={(v) => update("ceiling", v)}
+          id="charity-website"
+          label="Website (optional)"
+          placeholder="https://example.org"
+          value={form.website}
+          onChange={(v) => update("website", v)}
         />
 
         <div className="space-y-2">
@@ -221,6 +240,7 @@ function FormField({
   id,
   label,
   placeholder,
+  hint,
   inputMode,
   textarea,
   value,
@@ -229,6 +249,7 @@ function FormField({
   id: string;
   label: string;
   placeholder?: string;
+  hint?: string;
   inputMode?: "text" | "numeric";
   textarea?: boolean;
   value: string;
@@ -239,10 +260,11 @@ function FormField({
       <label htmlFor={id} className="text-sm font-bold text-gray-600 uppercase tracking-widest ml-1">
         {label}
       </label>
+      {hint && <p className="text-xs text-gray-400 ml-1">{hint}</p>}
       {textarea ? (
         <textarea
           id={id}
-          rows={3}
+          rows={4}
           placeholder={placeholder}
           value={value}
           onChange={(e) => onChange(e.target.value)}
