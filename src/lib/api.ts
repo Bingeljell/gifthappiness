@@ -1,8 +1,8 @@
-// Client for the GiftHappiness Worker API (see workers/). No backend is
-// deployed yet, so NEXT_PUBLIC_API_BASE_URL defaults to a placeholder that
-// won't resolve -- every call below is expected to fail with a network error
-// until a real Worker URL is set in .env.local. Callers should treat that as
-// a normal, expected state (see the friendly error copy in the UI), not a bug.
+// Client for the GiftHappiness Worker API (see workers/). NEXT_PUBLIC_API_BASE_URL
+// is set per-environment (Cloudflare Pages env var in production, .env.local
+// for local dev); the fallback below is a placeholder that won't resolve, so
+// callers should treat a network-error result as a config problem, not
+// assume the backend doesn't exist.
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.gifthappiness.example";
 
 export type ApiResult<T> = { ok: true; data: T } | { ok: false; error: string };
@@ -54,6 +54,37 @@ export function confirmVerification(
     method: "POST",
     body: JSON.stringify({ channel, contact, purpose, code }),
   });
+}
+
+// Public charity directory, reads from the live charities table (see
+// workers/src/routes/charities.ts) -- replaces the static dummy list that
+// used to live in src/lib/charities.ts (see docs/plan.md "Phase 7: Live
+// Charity Data").
+export type Charity = {
+  id: string;
+  slug: string;
+  name: string;
+  category: string;
+  status: string;
+  short_description: string;
+  what_they_do: string;
+  who_they_help: string;
+  why_selected: string;
+  impact_example: string | null;
+  sdgs: string[];
+  amount_raised: number;
+  ceiling: number;
+  registration: string | null;
+  years_active: number | null;
+  verification_notes: string | null;
+};
+
+export function getCharities(): Promise<ApiResult<{ charities: Charity[] }>> {
+  return apiFetch("/charities");
+}
+
+export function getCharity(slug: string): Promise<ApiResult<{ charity: Charity }>> {
+  return apiFetch(`/charities/${encodeURIComponent(slug)}`);
 }
 
 export type CreateCelebrationInput = {
