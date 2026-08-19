@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import {
   AlertCircle,
@@ -15,8 +15,7 @@ import {
   Mail,
   ShieldCheck,
 } from "lucide-react";
-import { charities } from "@/lib/charities";
-import { confirmVerification, createCelebration, requestVerification } from "@/lib/api";
+import { confirmVerification, createCelebration, getCharities, requestVerification, type Charity } from "@/lib/api";
 
 const celebrationTypes = [
   "Birthday",
@@ -58,12 +57,17 @@ const initialForm: FormState = {
   address: "",
   celebrationType: celebrationTypes[0],
   celebrationDate: "",
-  charityName: charities[0].name,
+  charityName: "",
   activeFrom: "",
   activeTill: "",
   message: "",
   pictureName: "",
 };
+
+type CharitiesState =
+  | { status: "loading" }
+  | { status: "loaded"; charities: Charity[] }
+  | { status: "error"; message: string };
 
 type VerificationState =
   | { status: "idle" }
@@ -85,6 +89,21 @@ export default function CreateCelebration() {
   const [verification, setVerification] = useState<VerificationState>({ status: "idle" });
   const [verificationCode, setVerificationCode] = useState("");
   const [publish, setPublish] = useState<PublishState>({ status: "idle" });
+  const [charities, setCharities] = useState<CharitiesState>({ status: "loading" });
+
+  useEffect(() => {
+    getCharities().then((result) => {
+      setCharities(result.ok ? { status: "loaded", charities: result.data.charities } : { status: "error", message: result.error });
+    });
+  }, []);
+
+  // Default the picker to the first loaded charity, once, without
+  // clobbering a choice the host already made (adjusting state during
+  // render, per React's guidance -- no effect needed, matches the pattern
+  // already used on /celebration for donor autofill).
+  if (charities.status === "loaded" && !form.charityName && charities.charities.length > 0) {
+    setForm((prev) => ({ ...prev, charityName: charities.charities[0].name }));
+  }
 
   const update = (field: keyof FormState, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -115,7 +134,11 @@ export default function CreateCelebration() {
   };
 
   const publishCelebration = async () => {
-    const charity = charities.find((c) => c.name === form.charityName) ?? charities[0];
+    const charity = charities.status === "loaded" ? charities.charities.find((c) => c.name === form.charityName) : undefined;
+    if (!charity) {
+      setPublish({ status: "error", message: "Choose a charity before publishing" });
+      return;
+    }
     setPublish({ status: "submitting" });
     const result = await createCelebration({
       hostName: form.hostName || "Anonymous host",
@@ -180,9 +203,8 @@ export default function CreateCelebration() {
           </div>
 
           <p className="text-sm text-gray-500 mb-8">
-            This form calls a live GiftHappiness API. No backend is deployed yet, so requests are expected to fail
-            until then &mdash; that&apos;s normal at this stage. Image upload and payment details are still pending
-            product decisions.
+            This form calls the live GiftHappiness API. Image upload and payment details are still pending product
+            decisions.
           </p>
 
           {step === 0 && (
@@ -196,8 +218,8 @@ export default function CreateCelebration() {
               onConfirmVerification={confirmVerificationCode}
             />
           )}
-          {step === 1 && <StepCauseAndPage form={form} update={update} />}
-          {step === 2 && <StepPreviewAndPublish form={form} publish={publish} />}
+          {step === 1 && <StepCauseAndPage form={form} update={update} charities={charities} />}
+          {step === 2 && <StepPreviewAndPublish form={form} publish={publish} charities={charities} />}
 
           <div className="flex items-center justify-between mt-10 pt-8 border-t border-gray-100">
             <button
@@ -398,9 +420,11 @@ function StepHostOccasion({
 function StepCauseAndPage({
   form,
   update,
+  charities,
 }: {
   form: FormState;
   update: (field: keyof FormState, value: string) => void;
+  charities: CharitiesState;
 }) {
   return (
     <div className="space-y-6">
@@ -408,18 +432,31 @@ function StepCauseAndPage({
         <label htmlFor="charity" className="text-sm font-bold text-gray-600 uppercase tracking-widest ml-1">
           Charity selected
         </label>
-        <select
-          id="charity"
-          value={form.charityName}
-          onChange={(e) => update("charityName", e.target.value)}
-          className="w-full px-6 py-4 rounded-2xl bg-white border border-gray-200 focus:border-primary-pink/30 focus:ring-4 focus:ring-primary-pink/5 outline-none transition-all text-gray-900 appearance-none"
-        >
-          {charities.map((charity) => (
-            <option key={charity.slug} value={charity.name}>
-              {charity.name} ({charity.category})
-            </option>
-          ))}
-        </select>
+        {charities.status === "loading" && (
+          <div className="flex items-center gap-2 text-gray-500 px-1 py-2">
+            <Loader2 className="w-4 h-4 animate-spin" /> Loading charities...
+          </div>
+        )}
+        {charities.status === "error" && (
+          <p className="flex items-start gap-2 text-sm font-semibold text-primary-pink px-1 py-2">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            {charities.message}
+          </p>
+        )}
+        {charities.status === "loaded" && (
+          <select
+            id="charity"
+            value={form.charityName}
+            onChange={(e) => update("charityName", e.target.value)}
+            className="w-full px-6 py-4 rounded-2xl bg-white border border-gray-200 focus:border-primary-pink/30 focus:ring-4 focus:ring-primary-pink/5 outline-none transition-all text-gray-900 appearance-none"
+          >
+            {charities.charities.map((charity) => (
+              <option key={charity.slug} value={charity.name}>
+                {charity.name} ({charity.category})
+              </option>
+            ))}
+          </select>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -461,8 +498,16 @@ function StepCauseAndPage({
   );
 }
 
-function StepPreviewAndPublish({ form, publish }: { form: FormState; publish: PublishState }) {
-  const charity = charities.find((c) => c.name === form.charityName) ?? charities[0];
+function StepPreviewAndPublish({
+  form,
+  publish,
+  charities,
+}: {
+  form: FormState;
+  publish: PublishState;
+  charities: CharitiesState;
+}) {
+  const charity = charities.status === "loaded" ? charities.charities.find((c) => c.name === form.charityName) : undefined;
   const displayName = form.hostName || "Your name";
   const demoUrl = "https://gifthappiness.example/celebration/demo";
 
@@ -500,14 +545,16 @@ function StepPreviewAndPublish({ form, publish }: { form: FormState; publish: Pu
 
           <div className="grid grid-cols-2 gap-4 mb-6">
             <PreviewField label="Date" value={form.celebrationDate || "Not set"} />
-            <PreviewField label="Charity" value={charity.name} />
+            <PreviewField label="Charity" value={charity?.name ?? "Not selected"} />
             <PreviewField label="Active from" value={form.activeFrom || "Not set"} />
             <PreviewField label="Active till" value={form.activeTill || "Not set"} />
           </div>
 
-          <div className="rounded-2xl bg-white border border-gray-100 p-5 text-sm text-gray-600 leading-relaxed">
-            Supporting {charity.name} ({charity.category}). {charity.shortDescription}
-          </div>
+          {charity && (
+            <div className="rounded-2xl bg-white border border-gray-100 p-5 text-sm text-gray-600 leading-relaxed">
+              Supporting {charity.name} ({charity.category}). {charity.short_description}
+            </div>
+          )}
         </div>
 
         <div className="rounded-[32px] bg-white border border-gray-100 p-6 flex flex-col items-center text-center">

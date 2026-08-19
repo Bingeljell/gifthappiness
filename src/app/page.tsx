@@ -1,6 +1,9 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Gift, Heart, Quote, ShieldCheck, Share2 } from "lucide-react";
-import { charities as allCharities } from "@/lib/charities";
+import { AlertCircle, Gift, Heart, Loader2, Quote, ShieldCheck, Share2 } from "lucide-react";
+import { getCharities, type Charity } from "@/lib/api";
 
 const steps = [
   {
@@ -22,23 +25,6 @@ const steps = [
     icon: <Share2 className="w-8 h-8 text-white" />,
   },
 ];
-
-const featuredIconLabels: Record<string, string> = {
-  unicef: "Children",
-  wwf: "Earth",
-  "medecins-sans-frontieres": "Care",
-};
-
-const charities = Object.keys(featuredIconLabels).map((slug) => {
-  const charity = allCharities.find((item) => item.slug === slug)!;
-  return {
-    slug: charity.slug,
-    name: charity.name,
-    category: charity.category,
-    desc: charity.shortDescription,
-    icon: featuredIconLabels[slug],
-  };
-});
 
 const criteria = [
   "Registered NGO or charity.",
@@ -68,7 +54,20 @@ const contributorMessages = [
   },
 ];
 
+type FeaturedState =
+  | { status: "loading" }
+  | { status: "loaded"; charities: Charity[] }
+  | { status: "error"; message: string };
+
 export default function Home() {
+  const [featured, setFeatured] = useState<FeaturedState>({ status: "loading" });
+
+  useEffect(() => {
+    getCharities().then((result) => {
+      setFeatured(result.ok ? { status: "loaded", charities: result.data.charities.slice(0, 3) } : { status: "error", message: result.error });
+    });
+  }, []);
+
   return (
     <div className="flex flex-col">
       <section className="relative pt-24 pb-40 overflow-hidden">
@@ -152,22 +151,37 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-            {charities.map((charity) => (
-              <Link
-                key={charity.slug}
-                href={`/charities/${charity.slug}`}
-                className="bg-white rounded-[40px] p-10 border border-gray-100 shadow-sm hover:shadow-2xl hover:shadow-gray-200 transition-all duration-500 group block"
-              >
-                <div className="w-16 h-16 rounded-full bg-soft-pink text-primary-pink flex items-center justify-center mb-8 font-black text-sm">
-                  {charity.icon}
-                </div>
-                <div className="text-xs font-black text-primary-pink uppercase tracking-widest mb-3">{charity.category}</div>
-                <h4 className="text-3xl font-black text-gray-900 mb-6">{charity.name}</h4>
-                <p className="text-gray-600 text-base leading-relaxed font-medium">{charity.desc}</p>
-              </Link>
-            ))}
-          </div>
+          {featured.status === "loading" && (
+            <div className="flex items-center justify-center gap-2 text-gray-500 py-16">
+              <Loader2 className="w-5 h-5 animate-spin" /> Loading charities...
+            </div>
+          )}
+
+          {featured.status === "error" && (
+            <p className="flex items-center justify-center gap-2 text-sm font-semibold text-primary-pink py-16">
+              <AlertCircle className="w-4 h-4" />
+              {featured.message}
+            </p>
+          )}
+
+          {featured.status === "loaded" && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+              {featured.charities.map((charity) => (
+                <Link
+                  key={charity.slug}
+                  href={`/charities/${charity.slug}`}
+                  className="bg-white rounded-[40px] p-10 border border-gray-100 shadow-sm hover:shadow-2xl hover:shadow-gray-200 transition-all duration-500 group block"
+                >
+                  <div className="w-16 h-16 rounded-full bg-soft-pink text-primary-pink flex items-center justify-center mb-8 font-black text-sm">
+                    {charity.category.slice(0, 2).toUpperCase()}
+                  </div>
+                  <div className="text-xs font-black text-primary-pink uppercase tracking-widest mb-3">{charity.category}</div>
+                  <h4 className="text-3xl font-black text-gray-900 mb-6">{charity.name}</h4>
+                  <p className="text-gray-600 text-base leading-relaxed font-medium">{charity.short_description}</p>
+                </Link>
+              ))}
+            </div>
+          )}
 
           <div className="mt-16 bg-white border border-gray-100 rounded-[32px] p-8 md:p-10">
             <div className="flex flex-col lg:flex-row gap-10 lg:items-start lg:justify-between">

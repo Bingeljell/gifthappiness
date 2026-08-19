@@ -1,0 +1,8 @@
+# Cloudflare Pages rewrite for dynamic charity slugs. Static export can only
+# pre-render one fixed shell page for /charities/[slug] (see the comment in
+# src/app/charities/[slug]/page.tsx for why) -- this rewrites any request
+# under /charities/* to that shell (200 = rewrite, keeps the real URL in the
+# browser bar) instead of 404ing. Real static assets (the shell itself, the
+# /charities directory page) still resolve normally since Cloudflare checks
+# for a matching file before applying this rule.
+/charities/*  /charities/_shell  200

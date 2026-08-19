@@ -210,8 +210,8 @@ Bearer token in `localStorage`, not a cookie: the frontend (`gifthappiness.pages
 ### Sequencing
 
 1. **Stage 1 — unified accounts + host dashboard. Done, fully verified.** [x] Schema migration (`users`, `sessions`, `contributions.donor_id`, `verifications` purpose constraint) applied to the live Supabase project. [x] `/auth/*` routes (`request`, `confirm`, `me`, `logout`) and `GET /me/celebrations`, deployed and verified live via curl. [x] `/sign-in` and `/account` pages, `Header.tsx` wiring -- `npm run build`/`npm run lint` pass, and the full flow was clicked through live in the browser (against the deployed Worker, with `ALLOWED_ORIGIN` temporarily flipped to `localhost` for the test and reverted to `https://gifthappiness.pages.dev` afterward -- confirmed via a live CORS check post-revert): sign in with an email code (brute-forced from the stored hash for test purposes, same technique used throughout this project's testing) → redirected to `/account` → header shows the signed-in account and "Sign Out" → "My celebrations" correctly shows the empty state → Sign Out → `/account` correctly redirects back to `/sign-in` with no session. Nothing outstanding in Stage 1.
-2. **Stage 2 — donor history. Code complete, not yet deployed/verified live.** [x] `contributions_donor_id_idx` added to `supabase/schema.sql` (not yet applied to the live project — needs a manual `CREATE INDEX` run against it). [x] `POST /celebrations/:slug/contributions` now attaches `donor_id` from the session when the donor is signed in, best-effort (guest donations still work unauthenticated). [x] `GET /me/contributions` (session-gated, reads the base `contributions` table so amount/message are never redacted for the donor's own view). [x] `/celebration`'s donor fields (name/email/mobile) pre-fill from the signed-in user's account, still editable, and the submit call now sends the session token. [x] `/account` gained a "Your past donations" section. `npm run lint`/`npm run build` (frontend) and `npm run typecheck` (workers) all pass. Not yet deployed to the live Worker or clicked through in the browser — that's the next step before calling this stage done, same as Stage 1's process.
-3. **Stage 3 — admin RBAC. Code complete, not yet deployed/verified live.** [x] `/admin/*` routes (`listCharitiesAdmin`, `createCharity`, `updateCharity`) now check the session's `isAdmin` flag, with `ADMIN_API_KEY` kept as an explicit fallback during the transition (not deleted). [x] New read-only `/admin` page (gated on `user.isAdmin`; lists charities via the existing `GET /admin/charities`; no create/edit UI yet). [x] `Header.tsx` shows an "Admin" link only for admin users. `npm run typecheck` (workers) and `npm run lint`/`npm run build` (frontend) all pass. Not yet deployed to the live Worker, and no account has `is_admin = true` yet on the live project -- that manual SQL flip plus a browser click-through (signed-out, signed-in non-admin, signed-in admin) is the next step before calling this stage done.
+2. **Stage 2 — donor history. Done, deployed, verified live.** [x] `contributions_donor_id_idx` applied to the live Supabase project. [x] `POST /celebrations/:slug/contributions` attaches `donor_id` from the session when the donor is signed in, best-effort (guest donations still work unauthenticated). [x] `GET /me/contributions` (session-gated, reads the base `contributions` table so amount/message are never redacted for the donor's own view). [x] `/celebration`'s donor fields (name/email/mobile) pre-fill from the signed-in user's account, still editable, and the submit call sends the session token. [x] `/account` gained a "Your past donations" section. Deployed to the live Worker; `GET /me/contributions` confirmed live (401 unauthenticated, as expected).
+3. **Stage 3 — admin RBAC. Done, deployed, verified live.** [x] `/admin/*` routes (`listCharitiesAdmin`, `createCharity`, `updateCharity`) check the session's `isAdmin` flag, with `ADMIN_API_KEY` kept as an explicit fallback during the transition (not deleted). [x] Read-only `/admin` page (gated on `user.isAdmin`; lists charities via `GET /admin/charities`). [x] `Header.tsx` shows an "Admin" link only for admin users. Deployed to the live Worker; `is_admin = true` flipped on an account via live SQL, confirmed the "Admin" link and charities list render correctly in the browser once signed in as that account.
 
 Known constraint carried over from Phase 5: CORS is single-origin (`ALLOWED_ORIGIN`), so the new `/auth/*` and `/me/*` routes inherit the same Preview-deployment limitation already logged there.
 
@@ -225,29 +225,27 @@ Phase 6 Stage 3 (admin RBAC) added `/admin/*` write routes (`POST`/`GET`/`PATCH 
 
 ### What needs to change
 
-1. **Public `GET /charities` endpoint.** Reads the existing `charities_public` view (already defined in `supabase/schema.sql`, never wired to a route) — filtered to `status = 'active'`, no admin-only fields (e.g. `verification_notes`) exposed.
-2. **Rewire the 5 static-import pages** to fetch from that endpoint instead of `src/lib/charities.ts`:
-   - `/charities` (directory)
-   - `/charities/[slug]` (detail page — currently a build-time `generateStaticParams` route; needs to become a client-side fetch instead, since charities are no longer known at build time)
-   - `/` (homepage featured-charity teasers)
-   - `/create` (charity-selection step)
-   - `/impact` (aggregate totals + per-charity table)
-3. **Admin create-charity form** on `/admin`, calling the existing `POST /admin/charities` — the intended admin can't use curl. Slug should auto-generate from the charity name (don't ask a non-technical user to hand-write a URL slug).
-4. Once live, `src/lib/charities.ts` becomes dead code and can be deleted.
+1. **Public `GET /charities` and `GET /charities/:slug` endpoints.** Read the existing `charities_public` view (already defined in `supabase/schema.sql`, never wired to a route). Implementation note: returns the view as-is, no `status` filter or field redaction added -- the view is already named/granted for public consumption (`grant select ... to anon`), same design already applied to `celebrations_public`/`contributions_public`, so there was nothing extra to filter. Each page decides what to do with `status` itself (e.g. `/impact` shows both active and completed for transparency).
+2. **Rewire the 5 static-import pages** to fetch from that endpoint instead of `src/lib/charities.ts`: `/charities`, `/charities/[slug]`, `/`, `/create`, `/impact`.
+3. **Admin create-charity form** on `/admin`, calling the existing `POST /admin/charities` — the intended admin can't use curl. Slug auto-generates from the charity name.
+4. Delete `src/lib/charities.ts` once nothing imports it.
 
-### Open questions
+### Resolved: the `/charities/[slug]` static-export problem
 
-- `/charities/[slug]` currently uses `generateStaticParams` for a fully static export — moving to live data means switching that route to a client-side fetch (matches the pattern already used by `/account`/`/admin`), since re-running the Cloudflare Pages build every time a charity is added isn't acceptable for a non-technical admin.
-- Should the admin form also support editing/deactivating a charity after creation (`PATCH /admin/charities/:slug` already exists server-side), or is create-only enough for this pass? Deferred until the create flow itself is confirmed working.
+Static export can't pre-render one HTML file per charity slug once charities are added at runtime (no `generateStaticParams` list to enumerate) -- confirmed against this project's bundled Next.js docs (`node_modules/next/dist/docs/01-app/02-guides/static-exports.md`): a dynamic route without `generateStaticParams()` is explicitly unsupported for static export.
+
+Solution: `generateStaticParams()` returns a single fixed param (`{ slug: "_shell" }`), producing one static shell page at `/charities/_shell`. `public/_redirects` rewrites any `/charities/*` request to that shell with a `200` (rewrite, not redirect, so the browser URL bar keeps the real slug). The shell is a Client Component (`CharityDetailClient.tsx`) that reads the actual slug from `window.location.pathname` and fetches it. Standard technique for dynamic routes on a static host, same idea as the `try_files`/nginx rewrite example in the same Next.js doc, applied via Cloudflare Pages' `_redirects` file instead.
+
+Known tradeoff: per-charity `generateMetadata` (title/OG tags per charity) isn't possible with this approach since the route is a client-side shell, not server-rendered per slug -- relevant to the still-open per-charity-page item in the SEO Plan section below. Not addressed in this pass.
 
 ### Sequencing
 
-1. Public `GET /charities` endpoint (backend).
-2. Rewire `/charities`, `/charities/[slug]`, `/`, `/create`, `/impact` to the live endpoint (frontend).
-3. Admin create-charity form (frontend).
-4. Delete `src/lib/charities.ts`.
+1. [x] Public `GET /charities` and `GET /charities/:slug` endpoints (backend).
+2. [x] Rewired `/charities`, `/charities/[slug]`, `/`, `/create`, `/impact` to the live endpoint (frontend), including the `_shell`/`_redirects` technique above.
+3. [x] Admin create-charity form on `/admin`, slug auto-generated from name.
+4. [x] Deleted `src/lib/charities.ts`.
 
-Not started. No code changed in this write-up — documenting the gap and the plan before building, same as Phase 6.
+Code complete: `npm run typecheck` (workers), `npm run lint`/`npm run build` (frontend) all pass. Not yet deployed or verified live in the browser -- that's the next step before calling this phase done, same process as Phase 6's stages.
 
 ## CMS And Admin Direction
 
