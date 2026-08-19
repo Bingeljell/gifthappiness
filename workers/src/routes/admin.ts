@@ -50,15 +50,11 @@ export async function createCharity(request: Request, env: Env): Promise<Respons
       why_selected: requireString(body.whySelected, "whySelected"),
       impact_example: optionalString(body.impactExample, "impactExample"),
       sdgs: Array.isArray(body.sdgs) ? body.sdgs : [],
-      ceiling: Number(body.ceiling ?? 0),
       registration: optionalString(body.registration, "registration"),
       years_active: body.yearsActive ? Number(body.yearsActive) : null,
       verification_notes: optionalString(body.verificationNotes, "verificationNotes"),
+      website: optionalString(body.website, "website"),
     };
-
-    if (!Number.isFinite(record.ceiling) || record.ceiling <= 0) {
-      return errorResponse("ceiling must be a positive number", env, 422);
-    }
 
     const supabase = getSupabaseClient(env);
     const { data, error } = await supabase.from("charities").insert(record).select("*").single();
@@ -75,7 +71,7 @@ export async function createCharity(request: Request, env: Env): Promise<Respons
   }
 }
 
-// PATCH /admin/charities/:slug — partial update, e.g. status/ceiling/amount_raised.
+// PATCH /admin/charities/:slug — partial update, e.g. status/amount_raised.
 export async function updateCharity(slug: string, request: Request, env: Env): Promise<Response> {
   if (!(await isAuthorizedAdmin(request, env))) {
     return errorResponse("Unauthorized", env, 401);
@@ -94,10 +90,10 @@ export async function updateCharity(slug: string, request: Request, env: Env): P
       "impact_example",
       "sdgs",
       "amount_raised",
-      "ceiling",
       "registration",
       "years_active",
       "verification_notes",
+      "website",
     ] as const;
 
     const updates: Record<string, unknown> = {};
