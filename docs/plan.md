@@ -215,6 +215,40 @@ Bearer token in `localStorage`, not a cookie: the frontend (`gifthappiness.pages
 
 Known constraint carried over from Phase 5: CORS is single-origin (`ALLOWED_ORIGIN`), so the new `/auth/*` and `/me/*` routes inherit the same Preview-deployment limitation already logged there.
 
+## Phase 7: Live Charity Data
+
+Product context (2026-08-19): GiftHappiness is being handed off to non-technical owners (a friend and his daughter, who will onboard others herself) to run charity management day-to-day. Neither uses a terminal, so charity management has to work entirely through the browser — no curl, no SQL editor.
+
+### The gap found
+
+Phase 6 Stage 3 (admin RBAC) added `/admin/*` write routes (`POST`/`GET`/`PATCH /admin/charities`) that read/write the real `charities` table in Supabase. But every public-facing page that shows charities — `/charities`, `/charities/[slug]`, the homepage teaser cards, `/create`'s charity-selection step, and `/impact` — still imports a static, hardcoded 12-charity dummy list from `src/lib/charities.ts`, written during Phase 3 before a backend existed. Nothing on the live site reads from the database. A charity created via `/admin` today would be invisible everywhere a donor or host actually looks — the admin write path and the public read path are completely disconnected.
+
+### What needs to change
+
+1. **Public `GET /charities` endpoint.** Reads the existing `charities_public` view (already defined in `supabase/schema.sql`, never wired to a route) — filtered to `status = 'active'`, no admin-only fields (e.g. `verification_notes`) exposed.
+2. **Rewire the 5 static-import pages** to fetch from that endpoint instead of `src/lib/charities.ts`:
+   - `/charities` (directory)
+   - `/charities/[slug]` (detail page — currently a build-time `generateStaticParams` route; needs to become a client-side fetch instead, since charities are no longer known at build time)
+   - `/` (homepage featured-charity teasers)
+   - `/create` (charity-selection step)
+   - `/impact` (aggregate totals + per-charity table)
+3. **Admin create-charity form** on `/admin`, calling the existing `POST /admin/charities` — the intended admin can't use curl. Slug should auto-generate from the charity name (don't ask a non-technical user to hand-write a URL slug).
+4. Once live, `src/lib/charities.ts` becomes dead code and can be deleted.
+
+### Open questions
+
+- `/charities/[slug]` currently uses `generateStaticParams` for a fully static export — moving to live data means switching that route to a client-side fetch (matches the pattern already used by `/account`/`/admin`), since re-running the Cloudflare Pages build every time a charity is added isn't acceptable for a non-technical admin.
+- Should the admin form also support editing/deactivating a charity after creation (`PATCH /admin/charities/:slug` already exists server-side), or is create-only enough for this pass? Deferred until the create flow itself is confirmed working.
+
+### Sequencing
+
+1. Public `GET /charities` endpoint (backend).
+2. Rewire `/charities`, `/charities/[slug]`, `/`, `/create`, `/impact` to the live endpoint (frontend).
+3. Admin create-charity form (frontend).
+4. Delete `src/lib/charities.ts`.
+
+Not started. No code changed in this write-up — documenting the gap and the plan before building, same as Phase 6.
+
 ## CMS And Admin Direction
 
 Superseded by Phase 6 above for auth/roles specifically; the sections below (content-management scope, non-auth admin decisions) still stand.
@@ -230,7 +264,7 @@ Recommended path:
 
 CMS/admin decision points:
 
-- [ ] Confirm who will manage charity data and how often it changes.
+- [x] Confirmed (2026-08-19): a non-technical friend and his daughter will manage charity data going forward, and she'll onboard others herself — admin UI must work entirely in-browser, no terminal/SQL access assumed. Likely low volume. See Phase 7: Live Charity Data above.
 - [ ] Confirm whether landing page copy needs non-developer editing.
 - [ ] Confirm whether FAQ/policy content needs admin editing.
 - [ ] Decide whether admin pages are part of this app or a separate protected surface.
@@ -337,7 +371,7 @@ Initial protections:
 
 Likely admin-controlled areas:
 
-- [ ] Charity list and charity profiles.
+- [ ] Charity list and charity profiles (see Phase 7: Live Charity Data — public pages still read a static dummy file, not the database).
 - [ ] Charity donation limits and active/inactive status.
 - [ ] Landing page copy.
 - [ ] Featured charities.
