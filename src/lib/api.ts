@@ -172,3 +172,30 @@ export function getMyContributions(token: string): Promise<ApiResult<{ contribut
     headers: { Authorization: `Bearer ${token}` },
   });
 }
+
+export type AdminCharity = {
+  id: string;
+  slug: string;
+  name: string;
+  category: string;
+  status: string;
+  short_description: string;
+  what_they_do: string;
+  who_they_help: string;
+  why_selected: string;
+  impact_example: string | null;
+  sdgs: string[];
+  amount_raised: number;
+  ceiling: number;
+  registration: string | null;
+  years_active: number | null;
+  verification_notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export function adminListCharities(token: string): Promise<ApiResult<{ charities: AdminCharity[] }>> {
+  return apiFetch("/admin/charities", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
