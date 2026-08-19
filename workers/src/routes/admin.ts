@@ -1,19 +1,25 @@
 import { getSupabaseClient } from "../lib/supabase";
 import { json, errorResponse } from "../lib/response";
 import { readJsonBody, requireString, optionalString, ValidationError } from "../lib/validate";
+import { getSessionUser } from "../lib/session";
 import type { Env } from "../lib/env";
 
-// Gated by a shared-secret bearer token for now. docs/plan.md's CMS/Admin
-// Direction still has "define admin roles" as an open decision point; this
-// is a placeholder until real Supabase-Auth-backed role checks replace it.
-function isAuthorizedAdmin(request: Request, env: Env): boolean {
+// Session + users.is_admin is the real check (Phase 6 Stage 3). The
+// ADMIN_API_KEY shared secret is kept as an explicit fallback during the
+// transition per docs/plan.md, not deleted outright.
+async function isAuthorizedAdmin(request: Request, env: Env): Promise<boolean> {
   const auth = request.headers.get("Authorization") ?? "";
   const [scheme, token] = auth.split(" ");
-  return scheme === "Bearer" && token === env.ADMIN_API_KEY && env.ADMIN_API_KEY.length > 0;
+  if (scheme === "Bearer" && env.ADMIN_API_KEY.length > 0 && token === env.ADMIN_API_KEY) {
+    return true;
+  }
+
+  const user = await getSessionUser(request, env);
+  return user?.isAdmin === true;
 }
 
 export async function listCharitiesAdmin(request: Request, env: Env): Promise<Response> {
-  if (!isAuthorizedAdmin(request, env)) {
+  if (!(await isAuthorizedAdmin(request, env))) {
     return errorResponse("Unauthorized", env, 401);
   }
 
@@ -27,7 +33,7 @@ export async function listCharitiesAdmin(request: Request, env: Env): Promise<Re
 }
 
 export async function createCharity(request: Request, env: Env): Promise<Response> {
-  if (!isAuthorizedAdmin(request, env)) {
+  if (!(await isAuthorizedAdmin(request, env))) {
     return errorResponse("Unauthorized", env, 401);
   }
 
@@ -71,7 +77,7 @@ export async function createCharity(request: Request, env: Env): Promise<Respons
 
 // PATCH /admin/charities/:slug — partial update, e.g. status/ceiling/amount_raised.
 export async function updateCharity(slug: string, request: Request, env: Env): Promise<Response> {
-  if (!isAuthorizedAdmin(request, env)) {
+  if (!(await isAuthorizedAdmin(request, env))) {
     return errorResponse("Unauthorized", env, 401);
   }
 
