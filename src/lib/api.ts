@@ -93,10 +93,12 @@ export type SubmitContributionInput = {
 export function submitContribution(
   celebrationSlug: string,
   input: SubmitContributionInput,
+  token?: string,
 ): Promise<ApiResult<{ contribution: { id: string; payment_status: string }; note: string }>> {
   return apiFetch(`/celebrations/${encodeURIComponent(celebrationSlug)}/contributions`, {
     method: "POST",
     body: JSON.stringify(input),
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
   });
 }
 
@@ -106,7 +108,7 @@ export function submitContribution(
 // session is a bearer token the caller stores (see src/lib/session.tsx) and
 // passes back as an Authorization header, not a cookie -- the frontend
 // (static export) and API are different origins.
-export type User = { id: string; name: string | null; email: string; isAdmin: boolean };
+export type User = { id: string; name: string | null; email: string; mobile: string | null; isAdmin: boolean };
 
 export function requestLogin(email: string): Promise<ApiResult<{ status: string; expiresInMinutes: number }>> {
   return apiFetch("/auth/request", {
@@ -148,6 +150,25 @@ export type MyCelebration = {
 
 export function getMyCelebrations(token: string): Promise<ApiResult<{ celebrations: MyCelebration[] }>> {
   return apiFetch("/me/celebrations", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export type MyContribution = {
+  id: string;
+  celebration_id: string;
+  amount: number;
+  message: string | null;
+  show_name: boolean;
+  show_amount: boolean;
+  anonymous: boolean;
+  payment_status: string;
+  created_at: string;
+  celebration: { slug: string; celebration_type: string } | null;
+};
+
+export function getMyContributions(token: string): Promise<ApiResult<{ contributions: MyContribution[] }>> {
+  return apiFetch("/me/contributions", {
     headers: { Authorization: `Bearer ${token}` },
   });
 }
