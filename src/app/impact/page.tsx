@@ -95,7 +95,6 @@ export default function ImpactPage() {
                       <th className="px-6 py-5">Charity</th>
                       <th className="px-6 py-5">Category</th>
                       <th className="px-6 py-5">Amount raised</th>
-                      <th className="px-6 py-5">Ceiling</th>
                       <th className="px-6 py-5">Status</th>
                     </tr>
                   </thead>
@@ -109,7 +108,6 @@ export default function ImpactPage() {
                         </td>
                         <td className="px-6 py-5 text-gray-500 font-semibold">{charity.category}</td>
                         <td className="px-6 py-5 text-gray-900 font-bold">{formatInr(charity.amount_raised)}</td>
-                        <td className="px-6 py-5 text-gray-500 font-semibold">{formatInr(charity.ceiling)}</td>
                         <td className="px-6 py-5">
                           <span className="rounded-full bg-soft-pink px-3 py-1 text-xs font-black text-primary-pink uppercase tracking-widest">
                             {charity.status}

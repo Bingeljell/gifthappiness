@@ -9,7 +9,6 @@ const criteria = [
   "Registered NGO or charity.",
   "Minimum three years of existence.",
   "No relationship with GiftHappiness promoters.",
-  "Rotated out after a predetermined contribution limit.",
 ];
 
 function formatInr(amount: number) {
@@ -47,7 +46,7 @@ export default function CharitiesPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mb-16">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-16">
             {criteria.map((item) => (
               <div key={item} className="bg-white border border-gray-100 rounded-3xl p-6">
                 <ShieldCheck className="w-7 h-7 text-primary-pink mb-4" />
@@ -98,7 +97,7 @@ export default function CharitiesPage() {
                   </div>
 
                   <div className="rounded-2xl bg-gray-50 border border-gray-100 p-4 text-sm text-gray-600 font-semibold">
-                    {formatInr(charity.amount_raised)} raised of {formatInr(charity.ceiling)} ceiling
+                    {formatInr(charity.amount_raised)} raised so far
                   </div>
                 </Link>
               ))}
