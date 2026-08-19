@@ -9,6 +9,7 @@ import {
   optionalBoolean,
   ValidationError,
 } from "../lib/validate";
+import { getSessionUser } from "../lib/session";
 import type { Env } from "../lib/env";
 
 // POST /celebrations/:slug/contributions
@@ -32,6 +33,11 @@ export async function submitContribution(slug: string, request: Request, env: En
 
     const supabase = getSupabaseClient(env);
 
+    // Best-effort: attach the signed-in donor's id when present, but never
+    // gate this route on it -- guest (unauthenticated) contributions are
+    // expected and must keep working.
+    const donor = await getSessionUser(request, env);
+
     const { data: celebration, error: celebrationError } = await supabase
       .from("celebrations")
       .select("id, status")
@@ -49,6 +55,7 @@ export async function submitContribution(slug: string, request: Request, env: En
       .from("contributions")
       .insert({
         celebration_id: celebration.id,
+        donor_id: donor?.id ?? null,
         donor_name: donorName,
         donor_mobile: donorMobile,
         donor_email: donorEmail,
