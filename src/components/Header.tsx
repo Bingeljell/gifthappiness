@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { Heart, Menu } from "lucide-react";
 import { useState } from "react";
+import { useSession } from "@/lib/session";
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user, loading, signOut } = useSession();
 
   return (
     <header className="sticky top-0 z-50 w-full bg-creme/90 backdrop-blur-md border-b border-gray-100">
@@ -40,12 +42,26 @@ export default function Header() {
           <Link href="/create" className="text-sm font-semibold text-gray-600 hover:text-primary-pink transition-colors">
             Start a Celebration
           </Link>
-          <span
-            className="text-sm font-semibold text-gray-300 cursor-not-allowed select-none"
-            title="Sign in is not available yet"
-          >
-            Sign In
-          </span>
+          {!loading && (
+            user ? (
+              <div className="flex items-center gap-4">
+                <Link href="/account" className="text-sm font-semibold text-gray-600 hover:text-primary-pink transition-colors">
+                  {user.name || user.email}
+                </Link>
+                <button
+                  type="button"
+                  onClick={signOut}
+                  className="text-sm font-semibold text-gray-600 hover:text-primary-pink transition-colors"
+                >
+                  Sign Out
+                </button>
+              </div>
+            ) : (
+              <Link href="/sign-in" className="text-sm font-semibold text-gray-600 hover:text-primary-pink transition-colors">
+                Sign In
+              </Link>
+            )
+          )}
           <Link href="/create" className="px-6 py-2.5 rounded-full bg-primary-pink text-sm font-bold text-white hover:bg-primary-pink/90 transition-all shadow-lg shadow-primary-pink/20">
             Get Started
           </Link>
@@ -81,9 +97,29 @@ export default function Header() {
           <Link href="/create" className="text-xl font-bold text-gray-900" onClick={() => setIsMenuOpen(false)}>
             Start a Celebration
           </Link>
-          <span className="text-xl font-bold text-gray-300" title="Sign in is not available yet">
-            Sign In
-          </span>
+          {!loading && (
+            user ? (
+              <div className="flex flex-col gap-6">
+                <Link href="/account" className="text-xl font-bold text-gray-900" onClick={() => setIsMenuOpen(false)}>
+                  {user.name || user.email}
+                </Link>
+                <button
+                  type="button"
+                  className="text-xl font-bold text-gray-900 text-left"
+                  onClick={() => {
+                    signOut();
+                    setIsMenuOpen(false);
+                  }}
+                >
+                  Sign Out
+                </button>
+              </div>
+            ) : (
+              <Link href="/sign-in" className="text-xl font-bold text-gray-900" onClick={() => setIsMenuOpen(false)}>
+                Sign In
+              </Link>
+            )
+          )}
         </div>
       )}
     </header>

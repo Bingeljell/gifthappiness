@@ -1,5 +1,7 @@
 # Repo Guidelines
 
+1. Commits and PRs should not include any co-authorshitp - claude, codex, whatever...
+
 ## Project Context
 
 GiftHappiness is a charity-first celebration project. The current implementation is a static Next.js site deployed to Cloudflare. For now, build static front-end pages and forms that do not submit data anywhere unless the user explicitly approves a backend or third-party integration.

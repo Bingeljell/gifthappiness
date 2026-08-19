@@ -45,9 +45,11 @@ export async function createCelebration(request: Request, env: Env): Promise<Res
 
     // Email is the host's identity/verification key now (see docs/plan.md's
     // OTP-to-email deviation note); mobile is still collected but not used
-    // for lookups.
+    // for lookups. `users` is the unified account table (Phase 6) -- a host
+    // signing up here may already exist as a user (e.g. from a prior login),
+    // in which case name/mobile/address are filled in on that account.
     const { data: existingHost } = await supabase
-      .from("hosts")
+      .from("users")
       .select("id")
       .eq("email", hostEmail)
       .maybeSingle();
@@ -55,7 +57,7 @@ export async function createCelebration(request: Request, env: Env): Promise<Res
     let hostId = existingHost?.id as string | undefined;
     if (!hostId) {
       const { data: newHost, error: hostError } = await supabase
-        .from("hosts")
+        .from("users")
         .insert({ name: hostName, email: hostEmail, mobile: hostMobile, address: hostAddress })
         .select("id")
         .single();
@@ -64,6 +66,11 @@ export async function createCelebration(request: Request, env: Env): Promise<Res
         return errorResponse("Could not create host", env, 500);
       }
       hostId = newHost.id;
+    } else {
+      await supabase
+        .from("users")
+        .update({ name: hostName, mobile: hostMobile, address: hostAddress })
+        .eq("id", hostId);
     }
 
     const slug = `${slugify(hostName)}-${slugify(celebrationType)}-${crypto.randomUUID().slice(0, 8)}`;

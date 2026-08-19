@@ -99,3 +99,55 @@ export function submitContribution(
     body: JSON.stringify(input),
   });
 }
+
+// Accounts And Sign-In (Phase 6). One unified account for hosts, donors, and
+// admins -- see docs/plan.md "Phase 6: Accounts And Sign-In". Login reuses
+// the same email-code mechanism as host-signup verification above; the
+// session is a bearer token the caller stores (see src/lib/session.tsx) and
+// passes back as an Authorization header, not a cookie -- the frontend
+// (static export) and API are different origins.
+export type User = { id: string; name: string | null; email: string; isAdmin: boolean };
+
+export function requestLogin(email: string): Promise<ApiResult<{ status: string; expiresInMinutes: number }>> {
+  return apiFetch("/auth/request", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
+export function confirmLogin(email: string, code: string): Promise<ApiResult<{ token: string; user: User }>> {
+  return apiFetch("/auth/confirm", {
+    method: "POST",
+    body: JSON.stringify({ email, code }),
+  });
+}
+
+export function getMe(token: string): Promise<ApiResult<{ user: User }>> {
+  return apiFetch("/auth/me", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export function logout(token: string): Promise<ApiResult<{ status: string }>> {
+  return apiFetch("/auth/logout", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export type MyCelebration = {
+  id: string;
+  slug: string;
+  celebration_type: string;
+  celebration_date: string | null;
+  active_from: string | null;
+  active_till: string | null;
+  status: string;
+  charity_id: string;
+};
+
+export function getMyCelebrations(token: string): Promise<ApiResult<{ celebrations: MyCelebration[] }>> {
+  return apiFetch("/me/celebrations", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}

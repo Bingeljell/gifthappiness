@@ -172,11 +172,52 @@ Backend work items:
 - [ ] Decide whether image uploads use Supabase Storage or Cloudflare R2.
 - [ ] Define data retention and privacy requirements.
 - [ ] Define audit logging needs for admin actions.
-- [ ] Replace the `ADMIN_API_KEY` shared-secret gate on `/admin/*` routes with real role-based auth once the CMS/Admin roles below are decided.
+- [ ] Replace the `ADMIN_API_KEY` shared-secret gate on `/admin/*` routes with real role-based auth — now planned as part of Phase 6 below rather than a separate CMS decision.
 
 **Deviation from `master_docs.md`/`website_dev.md`: OTP → email verification.** Both docs describe host verification as mobile OTP. Per an explicit product decision, host verification now runs over email instead — the `hosts` table has `email`/`email_verified` columns, and the Worker's `verifications` table is channel-generic (`email` | `mobile`) specifically so mobile OTP can be turned back on later (per the docs) just by wiring an SMS provider, with no schema or route changes. `/create`'s "OTP verification" field/button was replaced with an "Email (used to verify you)" field and a Verify Email flow. Mobile number is still collected on both host and donor forms, just not used for verification right now.
 
+## Phase 6: Accounts And Sign-In
+
+Product decision (2026-08-17): the header's "Sign In" placeholder (Phase 1 follow-up) is for one unified account system, not three separate ones. A host today and a donor tomorrow should be the same identity, so accounts unify hosts, donors, and admins rather than bolting on three auth mechanisms. Passwordless email-code login is reused from the existing host-verification flow (`workers/src/routes/verification.ts`) rather than adding passwords.
+
+### Identity model
+
+- Repoint `celebrations.host_id` from `hosts` to a renamed `users` table (same columns as `hosts` today, plus `is_admin boolean not null default false`). `host_id` keeps its name — it still describes that user's role on that celebration — it just no longer points at a role-specific table.
+- Add `contributions.donor_id uuid null references users(id)`. Nullable so guest/anonymous donations (no account) keep working exactly as today, filling only the existing free-text `donor_name`/`donor_mobile`/`donor_email` columns; a signed-in donor's contribution additionally links to their account for history.
+- Add `'login'` to the `verifications.purpose` check constraint alongside the existing `host_signup`/`contribution` values, and reuse the same channel-generic code-issue/confirm mechanism for login.
+- New `sessions` table (`id`, `user_id`, `token_hash`, `expires_at`, `created_at`): an opaque bearer token, sha256-hashed at rest (same pattern already used for verification codes), not a JWT. Chosen over a stateless JWT so sessions can be revoked (logout, "sign out everywhere") without adding a second secret (a JWT signing key) to manage alongside `SUPABASE_SERVICE_ROLE_KEY`/`ADMIN_API_KEY`.
+
+### Auth flow (shared by every role)
+
+1. `POST /auth/request { email }` — find-or-create the `users` row by email, issue a login verification code (same mechanism as host-signup verification).
+2. `POST /auth/confirm { email, code }` — validate the code, mark `email_verified`, create a `sessions` row, return the plaintext bearer token once (only the hash is stored).
+3. `GET /auth/me` (`Authorization: Bearer <token>`) — look up the session by token hash, reject if expired, return `{ id, name, email, isAdmin }`.
+4. `POST /auth/logout` — delete the session row for that token.
+
+Bearer token in `localStorage`, not a cookie: the frontend (`gifthappiness.pages.dev`, static export) and API (`gift-happiness-api.nikhil-shahane.workers.dev`) are different origins, so a cookie session means fighting `SameSite`/CORS-credentials rules for no real benefit at this scale. Tradeoff: a `localStorage` token is more exposed to XSS than an `httpOnly` cookie — acceptable for now since no payment/financial data flows through it (payment gateway is still undecided, see Payments Plan), but worth revisiting if that changes.
+
+### Admin
+
+- `/admin/*` routes switch from the `ADMIN_API_KEY` shared secret to: validate the bearer session, require `users.is_admin = true`. The first admin account is flipped via a direct SQL update against the live project — no admin-invite UI yet.
+
+### Frontend
+
+- New `/sign-in` page: email → request code → enter code → confirm → store token → redirect.
+- A `useSession()` hook/context: reads the stored token, calls `GET /auth/me` once, exposes `{ user, loading, signOut }` to the rest of the app.
+- `Header.tsx`: the greyed-out "Sign In" placeholder becomes a real link; once signed in, show the account name / "My Celebrations" / sign-out instead.
+- New `/account` page (client-side protected — redirect to `/sign-in` if no session, since static export has no server to gate this): lists the signed-in user's celebrations via a new `GET /me/celebrations` route.
+
+### Sequencing
+
+1. **Stage 1 — unified accounts + host dashboard. Done, fully verified.** [x] Schema migration (`users`, `sessions`, `contributions.donor_id`, `verifications` purpose constraint) applied to the live Supabase project. [x] `/auth/*` routes (`request`, `confirm`, `me`, `logout`) and `GET /me/celebrations`, deployed and verified live via curl. [x] `/sign-in` and `/account` pages, `Header.tsx` wiring -- `npm run build`/`npm run lint` pass, and the full flow was clicked through live in the browser (against the deployed Worker, with `ALLOWED_ORIGIN` temporarily flipped to `localhost` for the test and reverted to `https://gifthappiness.pages.dev` afterward -- confirmed via a live CORS check post-revert): sign in with an email code (brute-forced from the stored hash for test purposes, same technique used throughout this project's testing) → redirected to `/account` → header shows the signed-in account and "Sign Out" → "My celebrations" correctly shows the empty state → Sign Out → `/account` correctly redirects back to `/sign-in` with no session. Nothing outstanding in Stage 1.
+2. **Stage 2 — donor history.** Not started. `/celebration`'s contribution form attaches `donor_id` when signed in; `GET /me/contributions`; a "your past donations" section on `/account`.
+3. **Stage 3 — admin RBAC.** Not started. `is_admin` flag exists on `users` (added in Stage 1's migration) but nothing reads it yet; `/admin/*` routes switch to session+`isAdmin` checks, a minimal admin landing page. `ADMIN_API_KEY` can stay as a fallback during the transition rather than being deleted outright.
+
+Known constraint carried over from Phase 5: CORS is single-origin (`ALLOWED_ORIGIN`), so the new `/auth/*` and `/me/*` routes inherit the same Preview-deployment limitation already logged there.
+
 ## CMS And Admin Direction
+
+Superseded by Phase 6 above for auth/roles specifically; the sections below (content-management scope, non-auth admin decisions) still stand.
 
 Do not add a CMS framework yet. The current setup is good enough for the next backend pass if admin needs stay narrow.
 
