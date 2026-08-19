@@ -3,6 +3,7 @@ import { json, errorResponse } from "../lib/response";
 import { readJsonBody, requireEmail, requireString, ValidationError } from "../lib/validate";
 import { generateCode, hashCode } from "../lib/code";
 import { createSession, deleteSession, getSessionUser } from "../lib/session";
+import { sendEmail } from "../lib/email";
 import type { Env } from "../lib/env";
 
 const CODE_TTL_MINUTES = 15;
@@ -11,8 +12,7 @@ const CODE_TTL_MINUTES = 15;
 // Find-or-create the user by email, then issue a login code through the
 // same verifications table/mechanism as host-signup verification (purpose
 // "login" instead of "host_signup" -- see workers/src/routes/verification.ts
-// and supabase/schema.sql). Same TODO as that route: dispatch needs an email
-// provider, so this can't be exercised end-to-end until one is chosen.
+// and supabase/schema.sql), and email it via Resend (see lib/email.ts).
 export async function requestLogin(request: Request, env: Env): Promise<Response> {
   try {
     const body = await readJsonBody(request);
@@ -44,7 +44,10 @@ export async function requestLogin(request: Request, env: Env): Promise<Response
       return errorResponse("Could not issue a sign-in code", env, 500);
     }
 
-    // TODO(email): dispatch `code` via the chosen transactional email provider.
+    const sent = await sendEmail(env, email, "Your GiftHappiness sign-in code", `Your sign-in code is ${code}. It expires in ${CODE_TTL_MINUTES} minutes.`);
+    if (!sent) {
+      return errorResponse("Could not send the sign-in code email", env, 502);
+    }
 
     return json({ status: "issued", expiresInMinutes: CODE_TTL_MINUTES }, env, 201);
   } catch (err) {

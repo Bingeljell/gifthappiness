@@ -360,10 +360,7 @@ function StepHostOccasion({
           </p>
         )}
         {verification.status === "sent" && (
-          <p className="text-xs text-gray-500">
-            A code was requested. Actual email delivery isn&apos;t wired up yet, so check{" "}
-            <code>workers/src/routes/verification.ts</code> once a provider is chosen.
-          </p>
+          <p className="text-xs text-gray-500">Check your email for the code. It expires in 15 minutes.</p>
         )}
         <p className="text-xs text-gray-400">
           Mobile OTP verification is deferred for now; email is the active verification path.

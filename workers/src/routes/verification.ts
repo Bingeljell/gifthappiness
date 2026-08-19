@@ -2,6 +2,7 @@ import { getSupabaseClient } from "../lib/supabase";
 import { json, errorResponse } from "../lib/response";
 import { readJsonBody, requireString, requireEmail, requireMobile, ValidationError } from "../lib/validate";
 import { generateCode, hashCode } from "../lib/code";
+import { sendEmail } from "../lib/email";
 import type { Env } from "../lib/env";
 
 const CODE_TTL_MINUTES = 15;
@@ -34,9 +35,9 @@ function normalizeContact(channel: "email" | "mobile", value: unknown): string {
 // "mobile" channel is already accepted here so turning OTP back on later is
 // just wiring an SMS provider at the TODO below, no schema or route changes.
 //
-// Never returns the code in the response. Until an email provider (or later,
-// an SMS provider) is chosen, there is nowhere for the code to be dispatched
-// to, so this route can't be exercised end-to-end yet.
+// Never returns the code in the response -- it's emailed via Resend instead
+// (see lib/email.ts). Mobile-channel codes still have nowhere to be
+// dispatched to until an SMS provider is picked.
 export async function requestVerification(request: Request, env: Env): Promise<Response> {
   try {
     const body = await readJsonBody(request);
@@ -61,7 +62,12 @@ export async function requestVerification(request: Request, env: Env): Promise<R
       return errorResponse("Could not issue a verification code", env, 500);
     }
 
-    // TODO(email): dispatch `code` via the chosen transactional email provider.
+    if (channel === "email") {
+      const sent = await sendEmail(env, contact, "Your GiftHappiness verification code", `Your verification code is ${code}. It expires in ${CODE_TTL_MINUTES} minutes.`);
+      if (!sent) {
+        return errorResponse("Could not send the verification code email", env, 502);
+      }
+    }
     // TODO(mobile, later): dispatch `code` via SMS once an OTP provider is picked.
 
     return json({ status: "issued", channel, expiresInMinutes: CODE_TTL_MINUTES }, env, 201);
