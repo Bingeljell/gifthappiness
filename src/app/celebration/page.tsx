@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { AlertCircle, CalendarDays, Check, CreditCard, Heart, Loader2, ShieldCheck } from "lucide-react";
 import { submitContribution } from "@/lib/api";
+import { useSession } from "@/lib/session";
 
 // This page is a single static demo, not routed by a real celebration slug
 // yet (see docs/plan.md Phase 5). Contributions submitted here are recorded
@@ -64,8 +65,24 @@ const initialDonorForm: DonorForm = {
 type SubmitState = { status: "idle" } | { status: "submitting" } | { status: "success" } | { status: "error"; message: string };
 
 export default function CelebrationPage() {
+  const { user, token } = useSession();
   const [donor, setDonor] = useState<DonorForm>(initialDonorForm);
   const [submit, setSubmit] = useState<SubmitState>({ status: "idle" });
+  // Tracks which signed-in user we've already pre-filled from, so the
+  // one-time autofill below doesn't clobber the donor's own edits on
+  // every render (adjusting state during render, per React's guidance
+  // for syncing state to a prop/external value -- no effect needed).
+  const [prefilledFor, setPrefilledFor] = useState<string | null>(null);
+
+  if (user && user.id !== prefilledFor) {
+    setPrefilledFor(user.id);
+    setDonor((prev) => ({
+      ...prev,
+      name: prev.name || user.name || "",
+      email: prev.email || user.email || "",
+      mobile: prev.mobile || user.mobile || "",
+    }));
+  }
 
   const updateDonor = <K extends keyof DonorForm>(field: K, value: DonorForm[K]) => {
     setDonor((prev) => ({ ...prev, [field]: value }));
@@ -80,17 +97,21 @@ export default function CelebrationPage() {
     }
 
     setSubmit({ status: "submitting" });
-    const result = await submitContribution(DEMO_CELEBRATION_SLUG, {
-      donorName: donor.name,
-      donorMobile: donor.mobile,
-      donorEmail: donor.email || undefined,
-      pan: donor.pan || undefined,
-      amount,
-      message: donor.message || undefined,
-      showName: donor.showName,
-      showAmount: donor.showAmount,
-      anonymous: donor.anonymous,
-    });
+    const result = await submitContribution(
+      DEMO_CELEBRATION_SLUG,
+      {
+        donorName: donor.name,
+        donorMobile: donor.mobile,
+        donorEmail: donor.email || undefined,
+        pan: donor.pan || undefined,
+        amount,
+        message: donor.message || undefined,
+        showName: donor.showName,
+        showAmount: donor.showAmount,
+        anonymous: donor.anonymous,
+      },
+      token ?? undefined,
+    );
     setSubmit(result.ok ? { status: "success" } : { status: "error", message: result.error });
   };
 

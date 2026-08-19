@@ -26,6 +26,7 @@ export type SessionUser = {
   id: string;
   name: string | null;
   email: string;
+  mobile: string | null;
   isAdmin: boolean;
 };
 
@@ -70,13 +71,13 @@ export async function getSessionUser(request: Request, env: Env): Promise<Sessio
 
   const { data: user } = await supabase
     .from("users")
-    .select("id, name, email, is_admin")
+    .select("id, name, email, mobile, is_admin")
     .eq("id", session.user_id)
     .maybeSingle();
 
   if (!user) return null;
 
-  return { id: user.id, name: user.name, email: user.email, isAdmin: user.is_admin };
+  return { id: user.id, name: user.name, email: user.email, mobile: user.mobile, isAdmin: user.is_admin };
 }
 
 export async function deleteSession(request: Request, env: Env): Promise<void> {

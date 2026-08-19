@@ -127,6 +127,7 @@ create table if not exists contributions (
 );
 
 create index if not exists contributions_celebration_id_idx on contributions (celebration_id);
+create index if not exists contributions_donor_id_idx on contributions (donor_id);
 
 -- ---------------------------------------------------------------------------
 -- verifications: short-lived codes for host/contributor/login verification.

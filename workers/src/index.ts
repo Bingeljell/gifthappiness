@@ -4,7 +4,7 @@ import { createCelebration, getCelebration } from "./routes/celebrations";
 import { submitContribution } from "./routes/contributions";
 import { requestVerification, confirmVerification } from "./routes/verification";
 import { requestLogin, confirmLogin, getMe, logout } from "./routes/auth";
-import { listMyCelebrations } from "./routes/me";
+import { listMyCelebrations, listMyContributions } from "./routes/me";
 import { listCharitiesAdmin, createCharity, updateCharity } from "./routes/admin";
 
 // Hand-rolled routing: the route count here doesn't justify pulling in a
@@ -71,6 +71,11 @@ const worker = {
     // GET /me/celebrations
     if (method === "GET" && segments.length === 2 && segments[0] === "me" && segments[1] === "celebrations") {
       return listMyCelebrations(request, env);
+    }
+
+    // GET /me/contributions
+    if (method === "GET" && segments.length === 2 && segments[0] === "me" && segments[1] === "contributions") {
+      return listMyContributions(request, env);
     }
 
     // GET/POST /admin/charities, PATCH /admin/charities/:slug
