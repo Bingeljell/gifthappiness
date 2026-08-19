@@ -257,16 +257,21 @@ Product context: GiftHappiness is not a fundraising-target platform ("raise ₹X
 4. **Added a `website` field** (schema + admin form + charity detail page, shown as an external link near the charity name).
 5. **Payments**: answered, not changed -- there is no payment gateway wired up. `submitContribution` always records `payment_status: "pending"` and never transitions it; this is a known, separate, not-yet-scoped gap (see the Payments Plan section below).
 
-**Manual step required**, same pattern as the Stage 2 index: the schema.sql edit doesn't apply itself to the live Supabase project. Run against it:
+**Manual step required**, same pattern as the Stage 2 index: the schema.sql edit doesn't apply itself to the live Supabase project. Run against it (the view must be dropped *before* the column, not replaced with the same statement -- `charities_public` depends on `ceiling`, and `CREATE OR REPLACE VIEW` can't drop a column from the middle of an existing view's output; hit this live on first attempt, corrected here):
 ```sql
+drop view charities_public;
+
 alter table charities drop column ceiling;
 alter table charities add column website text;
-create or replace view charities_public as
+
+create view charities_public as
 select
   id, slug, name, category, status, short_description, what_they_do,
   who_they_help, why_selected, impact_example, sdgs, amount_raised,
   registration, years_active, verification_notes, website
 from charities;
+
+grant select on charities_public to anon, authenticated;
 ```
 
 **Known gap surfaced during testing**: the one charity created via `/admin` before this fix (test data, "YODA") has its "What they do"/"Who they help" text as a single run-on paragraph with inline `-`/numbered markers, not real line breaks -- the new bullet renderer can't retroactively split text that has no newlines in it. There's still no edit UI (`PATCH /admin/charities/:slug` exists server-side but nothing calls it from the frontend, per Stage 3's original scope decision to ship create-only first). Re-entering that charity's content in the now-corrected form, or a manual SQL update, are the only fixes until an edit UI exists.
