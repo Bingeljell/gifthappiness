@@ -73,10 +73,10 @@ export type Charity = {
   impact_example: string | null;
   sdgs: string[];
   amount_raised: number;
-  ceiling: number;
   registration: string | null;
   years_active: number | null;
   verification_notes: string | null;
+  website: string | null;
 };
 
 export function getCharities(): Promise<ApiResult<{ charities: Charity[] }>> {
@@ -217,10 +217,10 @@ export type AdminCharity = {
   impact_example: string | null;
   sdgs: string[];
   amount_raised: number;
-  ceiling: number;
   registration: string | null;
   years_active: number | null;
   verification_notes: string | null;
+  website: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -241,10 +241,10 @@ export type AdminCreateCharityInput = {
   whySelected: string;
   impactExample?: string;
   sdgs?: string[];
-  ceiling: number;
   registration?: string;
   yearsActive?: number;
   verificationNotes?: string;
+  website?: string;
 };
 
 export function adminCreateCharity(token: string, input: AdminCreateCharityInput): Promise<ApiResult<{ charity: AdminCharity }>> {
