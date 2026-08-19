@@ -45,6 +45,11 @@ export default function Header() {
           {!loading && (
             user ? (
               <div className="flex items-center gap-4">
+                {user.isAdmin && (
+                  <Link href="/admin" className="text-sm font-semibold text-gray-600 hover:text-primary-pink transition-colors">
+                    Admin
+                  </Link>
+                )}
                 <Link href="/account" className="text-sm font-semibold text-gray-600 hover:text-primary-pink transition-colors">
                   {user.name || user.email}
                 </Link>
@@ -100,6 +105,11 @@ export default function Header() {
           {!loading && (
             user ? (
               <div className="flex flex-col gap-6">
+                {user.isAdmin && (
+                  <Link href="/admin" className="text-xl font-bold text-gray-900" onClick={() => setIsMenuOpen(false)}>
+                    Admin
+                  </Link>
+                )}
                 <Link href="/account" className="text-xl font-bold text-gray-900" onClick={() => setIsMenuOpen(false)}>
                   {user.name || user.email}
                 </Link>
