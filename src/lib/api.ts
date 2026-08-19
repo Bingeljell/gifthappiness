@@ -230,3 +230,27 @@ export function adminListCharities(token: string): Promise<ApiResult<{ charities
     headers: { Authorization: `Bearer ${token}` },
   });
 }
+
+export type AdminCreateCharityInput = {
+  slug: string;
+  name: string;
+  category: string;
+  shortDescription: string;
+  whatTheyDo: string;
+  whoTheyHelp: string;
+  whySelected: string;
+  impactExample?: string;
+  sdgs?: string[];
+  ceiling: number;
+  registration?: string;
+  yearsActive?: number;
+  verificationNotes?: string;
+};
+
+export function adminCreateCharity(token: string, input: AdminCreateCharityInput): Promise<ApiResult<{ charity: AdminCharity }>> {
+  return apiFetch("/admin/charities", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify(input),
+  });
+}

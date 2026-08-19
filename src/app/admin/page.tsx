@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { AlertCircle, Loader2, ShieldAlert, ShieldCheck } from "lucide-react";
 import { adminListCharities, type AdminCharity } from "@/lib/api";
 import { useSession } from "@/lib/session";
+import AddCharityForm from "./AddCharityForm";
 
 type CharitiesState =
   | { status: "loading" }
@@ -29,7 +30,11 @@ export default function AdminPage() {
     });
   }, [loading, user, token, router]);
 
-  if (loading || !user) {
+  const handleCreated = (charity: AdminCharity) => {
+    setCharities((prev) => (prev.status === "loaded" ? { status: "loaded", charities: [charity, ...prev.charities] } : prev));
+  };
+
+  if (loading || !user || !token) {
     return (
       <div className="min-h-[calc(100vh-80px)] flex items-center justify-center">
         <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
@@ -62,6 +67,10 @@ export default function AdminPage() {
               <ShieldCheck className="w-5 h-5 text-white" />
             </div>
             <h1 className="text-xl font-bold text-gray-900">Charities</h1>
+          </div>
+
+          <div className="mt-6">
+            <AddCharityForm token={token} onCreated={handleCreated} />
           </div>
 
           <div className="mt-8 space-y-3">
