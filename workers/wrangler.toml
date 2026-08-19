@@ -24,3 +24,9 @@ ALLOWED_ORIGIN = "https://gifthappiness.pages.dev"
 #   ADMIN_API_KEY             - shared secret for admin-only routes until a real
 #                               admin-auth strategy is picked (see docs/plan.md
 #                               CMS/Admin Direction).
+#   RESEND_API_KEY            - Resend API key for sending verification/login
+#                               codes (see workers/src/lib/email.ts). Sends from
+#                               Resend's shared sandbox address until
+#                               gifthappiness.com is verified as a sending
+#                               domain there -- until then, only deliverable to
+#                               the email on the Resend account itself.
