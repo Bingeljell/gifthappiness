@@ -38,11 +38,6 @@ export default function CharitySelectionPolicyPage() {
           </ol>
 
           <div className="rounded-3xl bg-gray-50 border border-gray-100 p-6 space-y-3 text-sm text-gray-500 leading-relaxed">
-            <p>
-              Once a charity reaches its predetermined fundraising ceiling, it can rotate off the list for new
-              celebrations so other approved organisations receive an opportunity. Existing celebration pages are not
-              disrupted when this happens.
-            </p>
             <p>The final vetting checklist and agreements are still to be reviewed by legal and accounting professionals before launch.</p>
           </div>
         </div>

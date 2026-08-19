@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { AlertCircle, Heart, Loader2, ShieldCheck, Sparkles, Users } from "lucide-react";
+import { AlertCircle, ExternalLink, Heart, Loader2, ShieldCheck, Sparkles, Users } from "lucide-react";
 import { getCharity, type Charity } from "@/lib/api";
 import { sdgDescriptions } from "@/lib/sdgs";
 
@@ -69,7 +69,6 @@ export default function CharityDetailClient() {
   }
 
   const { charity } = state;
-  const percentRaised = Math.min(100, Math.round((charity.amount_raised / charity.ceiling) * 100));
 
   return (
     <div className="bg-creme">
@@ -91,22 +90,27 @@ export default function CharityDetailClient() {
               </div>
 
               <div className="text-xs font-black text-primary-pink uppercase tracking-widest mb-3">{charity.category}</div>
-              <h1 className="text-4xl md:text-6xl font-black text-gray-900 mb-8 leading-tight tracking-tight">
+              <h1 className="text-4xl md:text-6xl font-black text-gray-900 mb-4 leading-tight tracking-tight">
                 {charity.name}
               </h1>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-10">
-                <InfoBlock icon={<Sparkles className="w-5 h-5" />} label="What they do" value={charity.what_they_do} />
-                <InfoBlock icon={<Users className="w-5 h-5" />} label="Who they help" value={charity.who_they_help} />
-                <InfoBlock icon={<ShieldCheck className="w-5 h-5" />} label="Why we selected them" value={charity.why_selected} />
-              </div>
-
-              {charity.impact_example && (
-                <div className="rounded-3xl bg-gray-50 border border-gray-100 p-6 mb-8">
-                  <div className="text-xs font-black text-primary-pink uppercase tracking-widest mb-3">Impact example</div>
-                  <p className="text-gray-700 font-semibold leading-relaxed">{charity.impact_example}</p>
-                </div>
+              {charity.website && (
+                <a
+                  href={charity.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-sm font-bold text-primary-pink hover:underline mb-8"
+                >
+                  Visit their website <ExternalLink className="w-3.5 h-3.5" />
+                </a>
               )}
+
+              <div className="space-y-5 mb-10">
+                <InfoBlock icon={<Sparkles className="w-5 h-5" />} label="What they do" value={charity.what_they_do} list />
+                <InfoBlock icon={<Users className="w-5 h-5" />} label="Who they help" value={charity.who_they_help} list />
+                <InfoBlock icon={<ShieldCheck className="w-5 h-5" />} label="Why we selected them" value={charity.why_selected} list />
+                {charity.impact_example && <InfoBlock label="Impact example" value={charity.impact_example} list />}
+              </div>
 
               {charity.sdgs.length > 0 && (
                 <div className="mb-8">
@@ -133,14 +137,10 @@ export default function CharityDetailClient() {
               <div className="w-14 h-14 rounded-full bg-primary-pink flex items-center justify-center mb-6">
                 <Heart className="w-8 h-8 text-white fill-white" />
               </div>
-              <h2 className="text-2xl font-black text-gray-900 mb-3">Amount raised through GiftHappiness</h2>
+              <h2 className="text-2xl font-black text-gray-900 mb-3">Raised through GiftHappiness</h2>
 
-              <div className="mb-2 flex items-baseline justify-between">
+              <div className="mb-8">
                 <span className="text-3xl font-black text-gray-900">{formatInr(charity.amount_raised)}</span>
-                <span className="text-sm font-bold text-gray-400">of {formatInr(charity.ceiling)}</span>
-              </div>
-              <div className="w-full h-3 rounded-full bg-gray-100 overflow-hidden mb-8">
-                <div className="h-full bg-primary-pink" style={{ width: `${percentRaised}%` }} />
               </div>
 
               <Link
@@ -151,8 +151,7 @@ export default function CharityDetailClient() {
               </Link>
 
               <p className="text-xs text-gray-500 leading-relaxed">
-                Charities rotate out of the active list once they reach the predetermined ceiling; celebrations
-                already in progress are not disrupted.
+                GiftHappiness does not take a platform fee &mdash; contributions go directly to the cause.
               </p>
             </div>
           </div>
@@ -162,14 +161,27 @@ export default function CharityDetailClient() {
   );
 }
 
-function InfoBlock({ icon, label, value }: { icon?: ReactNode; label: string; value: string }) {
+function InfoBlock({ icon, label, value, list }: { icon?: ReactNode; label: string; value: string; list?: boolean }) {
+  const items = list ? value.split("\n").map((line) => line.replace(/^[-•\d.)\s]+/, "").trim()).filter(Boolean) : null;
+
   return (
     <div className="rounded-2xl bg-gray-50 border border-gray-100 p-5">
-      <div className="flex items-center gap-2 text-xs font-black text-primary-pink uppercase tracking-widest mb-2">
+      <div className="flex items-center gap-2 text-xs font-black text-primary-pink uppercase tracking-widest mb-3">
         {icon}
         {label}
       </div>
-      <p className="text-gray-700 font-semibold leading-relaxed">{value}</p>
+      {items ? (
+        <ul className="space-y-2">
+          {items.map((item, index) => (
+            <li key={index} className="flex gap-2 text-gray-700 font-semibold leading-relaxed">
+              <span className="text-primary-pink shrink-0">&bull;</span>
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-gray-700 font-semibold leading-relaxed">{value}</p>
+      )}
     </div>
   );
 }

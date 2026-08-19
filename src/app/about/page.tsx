@@ -12,7 +12,7 @@ const faqs = [
   },
   {
     question: "What prevents favoritism or only one charity receiving all the money?",
-    answer: "The criteria require no relationship with any member of GiftHappiness. Charities and amounts received should be visible on the website, and each charity has the same predetermined limit before it is removed from the active beneficiary list.",
+    answer: "The criteria require no relationship with any member of GiftHappiness, and charities and amounts received are visible on the website for anyone to see.",
   },
   {
     question: "Can I suggest my own charity for my celebration page?",

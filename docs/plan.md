@@ -245,7 +245,31 @@ Known tradeoff: per-charity `generateMetadata` (title/OG tags per charity) isn't
 3. [x] Admin create-charity form on `/admin`, slug auto-generated from name.
 4. [x] Deleted `src/lib/charities.ts`.
 
-Code complete: `npm run typecheck` (workers), `npm run lint`/`npm run build` (frontend) all pass. Not yet deployed or verified live in the browser -- that's the next step before calling this phase done, same process as Phase 6's stages.
+Deployed and verified live: added a charity via `/admin`, confirmed the `_shell`/`_redirects` rewrite works on real Cloudflare Pages, confirmed the new backend routes are live.
+
+### Post-launch feedback (2026-08-19)
+
+Product context: GiftHappiness is not a fundraising-target platform ("raise ₹X for charity Y") -- it's a conduit to good, a way to celebrate by giving. The "ceiling"/fundraising-goal concept never fit that framing and is removed, not just hidden.
+
+1. **Removed `ceiling` entirely** -- dropped from the schema (`supabase/schema.sql` and the live table, manual migration required, see below), the admin create/update routes, the admin form, and every page that showed a "raised of X" progress bar or figure (`/charities`, `/charities/[slug]`, `/impact`'s table, `/admin`'s list). `amount_raised` stays -- charities still show how much has come through GiftHappiness, just with no target/cap framing.
+2. **Removed "rotates out after reaching a limit" language** from the homepage, `/charities`, `/about`'s FAQ, and `/charity-selection-policy` -- that policy no longer exists once there's no ceiling to reach.
+3. **"What they do" / "Who they help" / "Why selected" / "Impact example" are now line-based bullet lists** instead of single-paragraph text fields -- the admin form textareas are labeled "one point per line"; the charity detail page (`CharityDetailClient.tsx`) splits on newlines and renders an actual `<ul>`, stripping any leading `-`/`1.`/`•` markers the admin might type out of habit. Also restacked those three blocks from a cramped 3-column grid to full-width stacked cards, since longer list content didn't fit a narrow column.
+4. **Added a `website` field** (schema + admin form + charity detail page, shown as an external link near the charity name).
+5. **Payments**: answered, not changed -- there is no payment gateway wired up. `submitContribution` always records `payment_status: "pending"` and never transitions it; this is a known, separate, not-yet-scoped gap (see the Payments Plan section below).
+
+**Manual step required**, same pattern as the Stage 2 index: the schema.sql edit doesn't apply itself to the live Supabase project. Run against it:
+```sql
+alter table charities drop column ceiling;
+alter table charities add column website text;
+create or replace view charities_public as
+select
+  id, slug, name, category, status, short_description, what_they_do,
+  who_they_help, why_selected, impact_example, sdgs, amount_raised,
+  registration, years_active, verification_notes, website
+from charities;
+```
+
+**Known gap surfaced during testing**: the one charity created via `/admin` before this fix (test data, "YODA") has its "What they do"/"Who they help" text as a single run-on paragraph with inline `-`/numbered markers, not real line breaks -- the new bullet renderer can't retroactively split text that has no newlines in it. There's still no edit UI (`PATCH /admin/charities/:slug` exists server-side but nothing calls it from the frontend, per Stage 3's original scope decision to ship create-only first). Re-entering that charity's content in the now-corrected form, or a manual SQL update, are the only fixes until an edit UI exists.
 
 ## CMS And Admin Direction
 

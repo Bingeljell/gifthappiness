@@ -68,10 +68,13 @@ create table if not exists charities (
   impact_example text,
   sdgs text[] not null default '{}',
   amount_raised numeric(12, 2) not null default 0,
-  ceiling numeric(12, 2) not null,
   registration text,
   years_active integer,
   verification_notes text,
+  -- External link for donors who want more detail; no fundraising ceiling/
+  -- goal concept -- charities are supported, not capped (product decision
+  -- 2026-08-19, see docs/plan.md "Phase 7: Live Charity Data" follow-up).
+  website text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -199,8 +202,8 @@ alter table sessions enable row level security;
 create or replace view charities_public as
 select
   id, slug, name, category, status, short_description, what_they_do,
-  who_they_help, why_selected, impact_example, sdgs, amount_raised, ceiling,
-  registration, years_active, verification_notes
+  who_they_help, why_selected, impact_example, sdgs, amount_raised,
+  registration, years_active, verification_notes, website
 from charities;
 
 create or replace view celebrations_public as

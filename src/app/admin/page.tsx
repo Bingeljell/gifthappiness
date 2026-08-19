@@ -99,7 +99,7 @@ export default function AdminPage() {
                   <div>
                     <p className="font-bold text-gray-900">{c.name}</p>
                     <p className="text-sm text-gray-500">
-                      {c.slug} &middot; {c.category} &middot; ₹{c.amount_raised.toLocaleString("en-IN")} of ₹{c.ceiling.toLocaleString("en-IN")}
+                      {c.slug} &middot; {c.category} &middot; ₹{c.amount_raised.toLocaleString("en-IN")} raised
                     </p>
                   </div>
                   <span className="text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full bg-gray-100 text-gray-600">

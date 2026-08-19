@@ -30,7 +30,6 @@ const criteria = [
   "Registered NGO or charity.",
   "Minimum three years of existence.",
   "No relationship with the promoters of GiftHappiness.",
-  "Featured only until a predetermined donation limit is reached.",
 ];
 
 const contributorMessages = [
@@ -191,7 +190,7 @@ export default function Home() {
                 </div>
                 <h4 className="text-3xl font-black text-gray-900 mb-4">How charities are selected</h4>
                 <p className="text-gray-600 leading-relaxed font-medium">
-                  Each charity is vetted against clear criteria before being listed, and charities rotate out after reaching a predetermined contribution limit.
+                  Each charity is vetted against clear criteria before being listed.
                 </p>
               </div>
               <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:max-w-2xl">
