@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertCircle, Loader2, ShieldAlert, ShieldCheck } from "lucide-react";
+import { AlertCircle, Loader2, Pencil, ShieldAlert, ShieldCheck } from "lucide-react";
 import { adminListCharities, type AdminCharity } from "@/lib/api";
 import { useSession } from "@/lib/session";
 import AddCharityForm from "./AddCharityForm";
+import EditCharityForm from "./EditCharityForm";
 
 type CharitiesState =
   | { status: "loading" }
@@ -16,6 +17,7 @@ export default function AdminPage() {
   const router = useRouter();
   const { user, token, loading } = useSession();
   const [charities, setCharities] = useState<CharitiesState>({ status: "loading" });
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (loading) return;
@@ -32,6 +34,15 @@ export default function AdminPage() {
 
   const handleCreated = (charity: AdminCharity) => {
     setCharities((prev) => (prev.status === "loaded" ? { status: "loaded", charities: [charity, ...prev.charities] } : prev));
+  };
+
+  const handleSaved = (updated: AdminCharity) => {
+    setCharities((prev) =>
+      prev.status === "loaded"
+        ? { status: "loaded", charities: prev.charities.map((c) => (c.id === updated.id ? updated : c)) }
+        : prev,
+    );
+    setEditingId(null);
   };
 
   if (loading || !user || !token) {
@@ -94,19 +105,32 @@ export default function AdminPage() {
             )}
 
             {charities.status === "loaded" &&
-              charities.charities.map((c) => (
-                <div key={c.id} className="rounded-2xl bg-white border border-gray-200 p-5 flex items-center justify-between gap-4">
-                  <div>
-                    <p className="font-bold text-gray-900">{c.name}</p>
-                    <p className="text-sm text-gray-500">
-                      {c.slug} &middot; {c.category} &middot; ₹{c.amount_raised.toLocaleString("en-IN")} raised
-                    </p>
+              charities.charities.map((c) =>
+                editingId === c.id ? (
+                  <EditCharityForm key={c.id} charity={c} token={token} onSaved={handleSaved} onCancel={() => setEditingId(null)} />
+                ) : (
+                  <div key={c.id} className="rounded-2xl bg-white border border-gray-200 p-5 flex items-center justify-between gap-4">
+                    <div>
+                      <p className="font-bold text-gray-900">{c.name}</p>
+                      <p className="text-sm text-gray-500">
+                        {c.slug} &middot; {c.category} &middot; ₹{c.amount_raised.toLocaleString("en-IN")} raised
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className="text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full bg-gray-100 text-gray-600">
+                        {c.status}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setEditingId(c.id)}
+                        className="flex items-center gap-1.5 text-sm font-bold text-primary-pink hover:underline"
+                      >
+                        <Pencil className="w-3.5 h-3.5" /> Edit
+                      </button>
+                    </div>
                   </div>
-                  <span className="text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full bg-gray-100 text-gray-600">
-                    {c.status}
-                  </span>
-                </div>
-              ))}
+                ),
+              )}
           </div>
         </div>
       </div>
