@@ -257,7 +257,7 @@ Product context: GiftHappiness is not a fundraising-target platform ("raise ₹X
 4. **Added a `website` field** (schema + admin form + charity detail page, shown as an external link near the charity name).
 5. **Payments**: answered, not changed -- there is no payment gateway wired up. `submitContribution` always records `payment_status: "pending"` and never transitions it; this is a known, separate, not-yet-scoped gap (see the Payments Plan section below).
 
-**Manual step required**, same pattern as the Stage 2 index: the schema.sql edit doesn't apply itself to the live Supabase project. Run against it (the view must be dropped *before* the column, not replaced with the same statement -- `charities_public` depends on `ceiling`, and `CREATE OR REPLACE VIEW` can't drop a column from the middle of an existing view's output; hit this live on first attempt, corrected here):
+**Manual step, run and confirmed working live (2026-08-19)**, same pattern as the Stage 2 index: the schema.sql edit doesn't apply itself to the live Supabase project. Run against it (the view must be dropped *before* the column, not replaced with the same statement -- `charities_public` depends on `ceiling`, and `CREATE OR REPLACE VIEW` can't drop a column from the middle of an existing view's output; hit this live on first attempt, corrected here):
 ```sql
 drop view charities_public;
 
@@ -274,7 +274,19 @@ from charities;
 grant select on charities_public to anon, authenticated;
 ```
 
-**Known gap surfaced during testing**: the one charity created via `/admin` before this fix (test data, "YODA") has its "What they do"/"Who they help" text as a single run-on paragraph with inline `-`/numbered markers, not real line breaks -- the new bullet renderer can't retroactively split text that has no newlines in it. There's still no edit UI (`PATCH /admin/charities/:slug` exists server-side but nothing calls it from the frontend, per Stage 3's original scope decision to ship create-only first). Re-entering that charity's content in the now-corrected form, or a manual SQL update, are the only fixes until an edit UI exists.
+**Known gap surfaced during testing, since fixed**: the one charity created via `/admin` before this fix (test data, "YODA") had its "What they do"/"Who they help" text as a single run-on paragraph with inline `-`/numbered markers, not real line breaks -- the bullet renderer can't retroactively split text that has no newlines in it. Fixed by adding an edit UI (below); the actual "YODA" content still needs re-entering through the corrected form by whoever owns it, since the fix can't rewrite existing bad content automatically.
+
+### Edit UI (2026-08-19)
+
+`PATCH /admin/charities/:slug` existed server-side since Stage 3 but nothing called it -- Stage 3 explicitly deferred edit to ship create-only first. With real content now needing fixes, that gap became blocking.
+
+- **Found and fixed a real bug along the way**: the Worker's CORS config (`workers/src/lib/response.ts`) only allowed `GET, POST, OPTIONS` -- `PATCH` was never added, so any browser-based edit call would have failed at the CORS preflight stage regardless of the frontend code. Added `PATCH` to `Access-Control-Allow-Methods`.
+- Extracted `FormField`/`SdgChecklist` out of `AddCharityForm.tsx` into a shared `CharityFormFields.tsx` so the create and edit forms don't duplicate ~80 lines of field-rendering markup.
+- Added `adminUpdateCharity` to the API client (`AdminUpdateCharityInput` uses snake_case field names directly, matching how `updateCharity` reads its `allowedFields` off the raw request body server-side -- unlike the create route, which maps camelCase to snake_case).
+- Added `EditCharityForm.tsx`: pre-filled from the existing charity, slug shown read-only (changing it would break existing links), adds `status` (active/completed) and `amount_raised` as editable fields alongside everything the create form has -- both are legitimate admin-only edits (`amount_raised` in particular needs manual updates until a payment gateway exists, see the Payments answer above).
+- Wired into `/admin`: each charity row gets an Edit button that swaps the row for the edit form in place; saving updates that one charity in local state without a full refetch.
+
+Code complete: `npm run typecheck` (workers), `npm run lint`/`npm run build` (frontend) all pass. Not yet deployed -- the CORS fix requires a Worker redeploy before edit will actually work end to end in the browser.
 
 ## CMS And Admin Direction
 
