@@ -24,11 +24,13 @@ const ALLOWED_TYPES: Record<string, string> = {
 
 const MAX_BYTES = 5 * 1024 * 1024;
 
-// POST /admin/uploads/charity-logo -- multipart/form-data with a "file"
-// field. Returns the public URL; the admin form then sends that URL back as
-// logo_url on POST/PATCH /admin/charities (upload is a separate step from
-// charity create/update, so re-saving a charity never re-uploads the image).
-export async function uploadCharityLogo(request: Request, env: Env): Promise<Response> {
+// Shared by both charity image upload routes below -- multipart/form-data
+// with a "file" field, uploaded to the given public Storage bucket under a
+// random filename. Returns the public URL; the admin form sends that URL
+// back as logo_url/header_image_url on POST/PATCH /admin/charities (upload
+// is a separate step from charity create/update, so re-saving a charity's
+// text fields never re-uploads or re-touches the image).
+async function uploadCharityImage(request: Request, env: Env, bucket: string): Promise<Response> {
   if (!(await isAuthorizedAdmin(request, env))) {
     return errorResponse("Unauthorized", env, 401);
   }
@@ -58,7 +60,7 @@ export async function uploadCharityLogo(request: Request, env: Env): Promise<Res
 
   const path = `${crypto.randomUUID()}.${extension}`;
   const supabase = getSupabaseClient(env);
-  const { error: uploadError } = await supabase.storage.from("charity-logos").upload(path, file, {
+  const { error: uploadError } = await supabase.storage.from(bucket).upload(path, file, {
     contentType: file.type,
     cacheControl: "3600",
   });
@@ -67,6 +69,18 @@ export async function uploadCharityLogo(request: Request, env: Env): Promise<Res
     return errorResponse("Could not upload image", env, 500);
   }
 
-  const { data } = supabase.storage.from("charity-logos").getPublicUrl(path);
+  const { data } = supabase.storage.from(bucket).getPublicUrl(path);
   return json({ url: data.publicUrl }, env, 201);
+}
+
+// POST /admin/uploads/charity-logo -- the small profile/logo picture.
+export function uploadCharityLogo(request: Request, env: Env): Promise<Response> {
+  return uploadCharityImage(request, env, "charity-logos");
+}
+
+// POST /admin/uploads/charity-header -- the wide header/marquee banner shown
+// atop the charity detail page and as a cover image on directory/homepage
+// cards, distinct from the logo above.
+export function uploadCharityHeader(request: Request, env: Env): Promise<Response> {
+  return uploadCharityImage(request, env, "charity-headers");
 }

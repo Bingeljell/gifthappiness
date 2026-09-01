@@ -7,7 +7,7 @@ import { requestVerification, confirmVerification } from "./routes/verification"
 import { requestLogin, confirmLogin, getMe, logout } from "./routes/auth";
 import { listMyCelebrations, listMyContributions } from "./routes/me";
 import { listCharitiesAdmin, createCharity, updateCharity } from "./routes/admin";
-import { uploadCharityLogo } from "./routes/uploads";
+import { uploadCharityLogo, uploadCharityHeader } from "./routes/uploads";
 
 // Hand-rolled routing: the route count here doesn't justify pulling in a
 // router library. Revisit if this grows past a dozen or so routes.
@@ -100,6 +100,11 @@ const worker = {
     // POST /admin/uploads/charity-logo
     if (method === "POST" && segments.length === 3 && segments[0] === "admin" && segments[1] === "uploads" && segments[2] === "charity-logo") {
       return uploadCharityLogo(request, env);
+    }
+
+    // POST /admin/uploads/charity-header
+    if (method === "POST" && segments.length === 3 && segments[0] === "admin" && segments[1] === "uploads" && segments[2] === "charity-header") {
+      return uploadCharityHeader(request, env);
     }
 
     return errorResponse("Not found", env, 404);

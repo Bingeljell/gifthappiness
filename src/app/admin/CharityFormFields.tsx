@@ -3,18 +3,27 @@
 import { useState, type ChangeEvent } from "react";
 import { Loader2, Upload } from "lucide-react";
 import { sdgDescriptions } from "@/lib/sdgs";
-import { adminUploadCharityLogo } from "@/lib/api";
+import { adminUploadCharityLogo, adminUploadCharityHeader, type ApiResult } from "@/lib/api";
 
-export function ImageUploadField({
+// Shared by the small square logo field and the wide header/marquee field
+// below -- same upload/preview mechanics, different upload endpoint and
+// preview shape.
+function ImageUploadFieldBase({
   id,
+  label,
   token,
   value,
   onChange,
+  upload,
+  previewClassName,
 }: {
   id: string;
+  label: string;
   token: string;
   value: string;
   onChange: (url: string) => void;
+  upload: (token: string, file: File) => Promise<ApiResult<{ url: string }>>;
+  previewClassName: string;
 }) {
   const [status, setStatus] = useState<{ state: "idle" } | { state: "uploading" } | { state: "error"; message: string }>({ state: "idle" });
 
@@ -24,7 +33,7 @@ export function ImageUploadField({
     if (!file) return;
 
     setStatus({ state: "uploading" });
-    const result = await adminUploadCharityLogo(token, file);
+    const result = await upload(token, file);
     if (!result.ok) {
       setStatus({ state: "error", message: result.error });
       return;
@@ -36,14 +45,14 @@ export function ImageUploadField({
   return (
     <div className="space-y-2">
       <label htmlFor={id} className="text-sm font-bold text-gray-600 uppercase tracking-widest ml-1">
-        Picture (optional)
+        {label}
       </label>
       <div className="flex items-center gap-4">
         {value ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={value} alt="" className="w-16 h-16 rounded-2xl object-cover border border-gray-200" />
+          <img src={value} alt="" className={previewClassName} />
         ) : (
-          <div className="w-16 h-16 rounded-2xl bg-gray-50 border border-dashed border-gray-200" />
+          <div className={`${previewClassName} bg-gray-50 border border-dashed border-gray-200`} />
         )}
         <label
           htmlFor={id}
@@ -56,6 +65,37 @@ export function ImageUploadField({
       </div>
       {status.state === "error" && <p className="text-xs text-primary-pink font-semibold ml-1">{status.message}</p>}
     </div>
+  );
+}
+
+// The small square profile/logo picture (shown as the badge on cards).
+export function ImageUploadField({ id, token, value, onChange }: { id: string; token: string; value: string; onChange: (url: string) => void }) {
+  return (
+    <ImageUploadFieldBase
+      id={id}
+      label="Logo (optional)"
+      token={token}
+      value={value}
+      onChange={onChange}
+      upload={adminUploadCharityLogo}
+      previewClassName="w-16 h-16 rounded-2xl object-cover border border-gray-200"
+    />
+  );
+}
+
+// The wide header/marquee banner, shown atop the charity detail page and as
+// a cover image on directory/homepage cards -- distinct from the logo above.
+export function HeaderImageUploadField({ id, token, value, onChange }: { id: string; token: string; value: string; onChange: (url: string) => void }) {
+  return (
+    <ImageUploadFieldBase
+      id={id}
+      label="Header image / marquee (optional)"
+      token={token}
+      value={value}
+      onChange={onChange}
+      upload={adminUploadCharityHeader}
+      previewClassName="w-32 h-16 rounded-2xl object-cover border border-gray-200"
+    />
   );
 }
 

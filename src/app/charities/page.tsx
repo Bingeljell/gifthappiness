@@ -75,8 +75,17 @@ export default function CharitiesPage() {
                 <Link
                   key={charity.slug}
                   href={`/charities/${charity.slug}`}
-                  className="bg-white rounded-[32px] border border-gray-100 p-8 shadow-sm hover:shadow-2xl hover:shadow-gray-200 transition-all duration-500 block"
+                  className="bg-white rounded-[32px] border border-gray-100 p-8 shadow-sm hover:shadow-2xl hover:shadow-gray-200 transition-all duration-500 block overflow-hidden"
                 >
+                  {charity.header_image_url && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={charity.header_image_url}
+                      alt=""
+                      className="w-full h-36 object-cover rounded-2xl -mt-8 -mx-8 mb-7"
+                      style={{ width: "calc(100% + 4rem)" }}
+                    />
+                  )}
                   <div className="flex items-start justify-between gap-4 mb-7">
                     <CharityBadge logoUrl={charity.logo_url} category={charity.category} />
                     <span className="rounded-full bg-gray-50 border border-gray-100 px-3 py-1 text-xs font-black uppercase tracking-widest text-primary-pink">

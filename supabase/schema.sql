@@ -80,6 +80,12 @@ create table if not exists charities (
   -- an admin uploads one -- the frontend falls back to a category-initial
   -- badge (see docs/plan.md "Phase 8: Charity Pictures").
   logo_url text,
+  -- Public URL into the charity-headers Storage bucket below: a wide
+  -- header/marquee banner, distinct from the small square logo_url above.
+  -- Shown atop the charity detail page and as a cover image on directory/
+  -- homepage cards when set (see docs/plan.md "Phase 8b: Charity Header
+  -- Images").
+  header_image_url text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -208,7 +214,8 @@ create or replace view charities_public as
 select
   id, slug, name, category, status, short_description, what_they_do,
   who_they_help, why_selected, impact_example, sdgs, amount_raised,
-  registration, years_active, verification_notes, website, logo_url
+  registration, years_active, verification_notes, website, logo_url,
+  header_image_url
 from charities;
 
 create or replace view celebrations_public as
@@ -246,4 +253,11 @@ grant select on charities_public, celebrations_public, contributions_public to a
 -- ---------------------------------------------------------------------------
 insert into storage.buckets (id, name, public)
 values ('charity-logos', 'charity-logos', true)
+on conflict (id) do nothing;
+
+-- Second public bucket for the wide header/marquee banner (see
+-- charities.header_image_url above) -- kept separate from charity-logos so
+-- the two image kinds don't collide in one flat namespace.
+insert into storage.buckets (id, name, public)
+values ('charity-headers', 'charity-headers', true)
 on conflict (id) do nothing;
