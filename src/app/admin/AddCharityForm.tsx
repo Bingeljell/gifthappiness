@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { AlertCircle, Check, ChevronUp, Loader2, Plus } from "lucide-react";
 import { adminCreateCharity, type AdminCharity } from "@/lib/api";
-import { FormField, SdgChecklist } from "./CharityFormFields";
+import { FormField, ImageUploadField, SdgChecklist } from "./CharityFormFields";
 
 function slugify(text: string): string {
   return text
@@ -26,6 +26,7 @@ type FormState = {
   yearsActive: string;
   verificationNotes: string;
   sdgs: string[];
+  logoUrl: string;
 };
 
 const initialForm: FormState = {
@@ -41,6 +42,7 @@ const initialForm: FormState = {
   yearsActive: "",
   verificationNotes: "",
   sdgs: [],
+  logoUrl: "",
 };
 
 type SubmitState = { status: "idle" } | { status: "submitting" } | { status: "error"; message: string };
@@ -89,6 +91,7 @@ export default function AddCharityForm({ token, onCreated }: { token: string; on
       registration: form.registration || undefined,
       yearsActive: form.yearsActive ? Number(form.yearsActive) : undefined,
       verificationNotes: form.verificationNotes || undefined,
+      logoUrl: form.logoUrl || undefined,
     });
 
     if (!result.ok) {
@@ -129,6 +132,7 @@ export default function AddCharityForm({ token, onCreated }: { token: string; on
         {form.name && <p className="text-xs text-gray-400 -mt-3 ml-1">Will be listed at /charities/{slug || "..."}</p>}
 
         <FormField id="charity-category" label="Category" placeholder="e.g. Education, Health, Environment" value={form.category} onChange={(v) => update("category", v)} />
+        <ImageUploadField id="charity-logo" token={token} value={form.logoUrl} onChange={(v) => update("logoUrl", v)} />
         <FormField id="charity-summary" label="One-line summary" value={form.shortDescription} onChange={(v) => update("shortDescription", v)} />
         <FormField
           id="charity-what"

@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { AlertCircle, Check, Loader2, X } from "lucide-react";
 import { adminUpdateCharity, type AdminCharity } from "@/lib/api";
-import { FormField, SdgChecklist } from "./CharityFormFields";
+import { FormField, ImageUploadField, SdgChecklist } from "./CharityFormFields";
 
 type FormState = {
   name: string;
@@ -20,6 +20,7 @@ type FormState = {
   yearsActive: string;
   verificationNotes: string;
   sdgs: string[];
+  logoUrl: string;
 };
 
 function toFormState(charity: AdminCharity): FormState {
@@ -38,6 +39,7 @@ function toFormState(charity: AdminCharity): FormState {
     yearsActive: charity.years_active != null ? String(charity.years_active) : "",
     verificationNotes: charity.verification_notes ?? "",
     sdgs: charity.sdgs,
+    logoUrl: charity.logo_url ?? "",
   };
 }
 
@@ -96,6 +98,7 @@ export default function EditCharityForm({
       registration: form.registration || undefined,
       years_active: form.yearsActive ? Number(form.yearsActive) : null,
       verification_notes: form.verificationNotes || undefined,
+      logo_url: form.logoUrl || undefined,
     });
 
     if (!result.ok) {
@@ -120,6 +123,7 @@ export default function EditCharityForm({
       <form className="space-y-5" onSubmit={handleSubmit}>
         <FormField id={`edit-name-${charity.id}`} label="Charity name" value={form.name} onChange={(v) => update("name", v)} />
         <FormField id={`edit-category-${charity.id}`} label="Category" value={form.category} onChange={(v) => update("category", v)} />
+        <ImageUploadField id={`edit-logo-${charity.id}`} token={token} value={form.logoUrl} onChange={(v) => update("logoUrl", v)} />
 
         <div className="space-y-2">
           <label htmlFor={`edit-status-${charity.id}`} className="text-sm font-bold text-gray-600 uppercase tracking-widest ml-1">

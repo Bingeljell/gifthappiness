@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { AlertCircle, ExternalLink, Heart, Loader2, ShieldCheck, Sparkles, Users } from "lucide-react";
 import { getCharity, type Charity } from "@/lib/api";
 import { sdgDescriptions } from "@/lib/sdgs";
+import CharityBadge from "@/components/CharityBadge";
 
 function formatInr(amount: number) {
   return `₹${amount.toLocaleString("en-IN")}`;
@@ -81,9 +82,7 @@ export default function CharityDetailClient() {
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-10 items-start">
             <div className="bg-white border border-gray-100 rounded-[40px] p-8 md:p-12 shadow-sm">
               <div className="flex items-start justify-between gap-4 mb-8">
-                <div className="w-16 h-16 rounded-full bg-soft-pink text-primary-pink flex items-center justify-center font-black">
-                  {charity.category.slice(0, 2).toUpperCase()}
-                </div>
+                <CharityBadge logoUrl={charity.logo_url} category={charity.category} size="lg" />
                 <span className="rounded-full bg-gray-50 border border-gray-100 px-4 py-2 text-xs font-black uppercase tracking-widest text-primary-pink">
                   {charity.status}
                 </span>
@@ -162,7 +161,17 @@ export default function CharityDetailClient() {
 }
 
 function InfoBlock({ icon, label, value, list }: { icon?: ReactNode; label: string; value: string; list?: boolean }) {
-  const items = list ? value.split("\n").map((line) => line.replace(/^[-•\d.)\s]+/, "").trim()).filter(Boolean) : null;
+  // Strips a leading list marker only -- a bare "-"/"•", or "1." / "1)" style
+  // numbering. Deliberately doesn't match bare leading digits, since content
+  // like "500,000+ animals treated" starts with a real number, not a marker
+  // (a broader digit-eating regex here previously ate leading figures like
+  // that down to ",000+").
+  const items = list
+    ? value
+        .split("\n")
+        .map((line) => line.replace(/^(?:[-•]|\d+[.)])\s*/, "").trim())
+        .filter(Boolean)
+    : null;
 
   return (
     <div className="rounded-2xl bg-gray-50 border border-gray-100 p-5">

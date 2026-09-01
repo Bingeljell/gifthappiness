@@ -1,6 +1,63 @@
 "use client";
 
+import { useState, type ChangeEvent } from "react";
+import { Loader2, Upload } from "lucide-react";
 import { sdgDescriptions } from "@/lib/sdgs";
+import { adminUploadCharityLogo } from "@/lib/api";
+
+export function ImageUploadField({
+  id,
+  token,
+  value,
+  onChange,
+}: {
+  id: string;
+  token: string;
+  value: string;
+  onChange: (url: string) => void;
+}) {
+  const [status, setStatus] = useState<{ state: "idle" } | { state: "uploading" } | { state: "error"; message: string }>({ state: "idle" });
+
+  const handleFile = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    setStatus({ state: "uploading" });
+    const result = await adminUploadCharityLogo(token, file);
+    if (!result.ok) {
+      setStatus({ state: "error", message: result.error });
+      return;
+    }
+    setStatus({ state: "idle" });
+    onChange(result.data.url);
+  };
+
+  return (
+    <div className="space-y-2">
+      <label htmlFor={id} className="text-sm font-bold text-gray-600 uppercase tracking-widest ml-1">
+        Picture (optional)
+      </label>
+      <div className="flex items-center gap-4">
+        {value ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={value} alt="" className="w-16 h-16 rounded-2xl object-cover border border-gray-200" />
+        ) : (
+          <div className="w-16 h-16 rounded-2xl bg-gray-50 border border-dashed border-gray-200" />
+        )}
+        <label
+          htmlFor={id}
+          className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-gray-50 border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-100 cursor-pointer transition-all"
+        >
+          {status.state === "uploading" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+          {value ? "Replace image" : "Upload image"}
+        </label>
+        <input id={id} type="file" accept="image/png,image/jpeg,image/webp" onChange={handleFile} className="hidden" />
+      </div>
+      {status.state === "error" && <p className="text-xs text-primary-pink font-semibold ml-1">{status.message}</p>}
+    </div>
+  );
+}
 
 export function FormField({
   id,

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { AlertCircle, Heart, Loader2, ShieldCheck } from "lucide-react";
 import { getCharities, type Charity } from "@/lib/api";
+import CharityBadge from "@/components/CharityBadge";
 
 const criteria = [
   "Registered NGO or charity.",
@@ -77,9 +78,7 @@ export default function CharitiesPage() {
                   className="bg-white rounded-[32px] border border-gray-100 p-8 shadow-sm hover:shadow-2xl hover:shadow-gray-200 transition-all duration-500 block"
                 >
                   <div className="flex items-start justify-between gap-4 mb-7">
-                    <div className="w-14 h-14 rounded-full bg-soft-pink text-primary-pink flex items-center justify-center font-black text-sm">
-                      {charity.category.slice(0, 2).toUpperCase()}
-                    </div>
+                    <CharityBadge logoUrl={charity.logo_url} category={charity.category} />
                     <span className="rounded-full bg-gray-50 border border-gray-100 px-3 py-1 text-xs font-black uppercase tracking-widest text-primary-pink">
                       {charity.status}
                     </span>
