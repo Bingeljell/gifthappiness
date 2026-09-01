@@ -286,7 +286,39 @@ grant select on charities_public to anon, authenticated;
 - Added `EditCharityForm.tsx`: pre-filled from the existing charity, slug shown read-only (changing it would break existing links), adds `status` (active/completed) and `amount_raised` as editable fields alongside everything the create form has -- both are legitimate admin-only edits (`amount_raised` in particular needs manual updates until a payment gateway exists, see the Payments answer above).
 - Wired into `/admin`: each charity row gets an Edit button that swaps the row for the edit form in place; saving updates that one charity in local state without a full refetch.
 
-Code complete: `npm run typecheck` (workers), `npm run lint`/`npm run build` (frontend) all pass. Not yet deployed -- the CORS fix requires a Worker redeploy before edit will actually work end to end in the browser.
+Code complete: `npm run typecheck` (workers), `npm run lint`/`npm run build` (frontend) all pass. Deployed 2026-09-01 as part of the Phase 8 Worker redeploy below -- the CORS `PATCH` fix is live.
+
+## Phase 8: Charity Pictures (2026-09-01)
+
+Client feedback: charities need a picture as part of onboarding. Storage decision (left open in Phase 5's backend items) resolved as Supabase Storage, to keep everything -- DB and file storage -- in the one already-provisioned Supabase project rather than adding Cloudflare R2 as a second storage system.
+
+- `charities.logo_url text` (nullable) added to `supabase/schema.sql`, and to `charities_public`'s column list.
+- New public Storage bucket `charity-logos` (`public: true`, added via `insert into storage.buckets ...` in `supabase/schema.sql`) -- public so the returned URL works with no auth; there's no anon `INSERT` policy, so only the Worker (service role, bypasses Storage RLS the same way it does for tables) can write to it.
+- `POST /admin/uploads/charity-logo` (`workers/src/routes/uploads.ts`): admin-gated (same `isAuthorizedAdmin` check as the other admin routes), takes multipart/form-data with a `file` field, validates type (PNG/JPEG/WebP) and size (5MB max), uploads to the bucket under a random UUID filename, returns the public URL. Upload is a separate step from charity create/update on purpose -- the admin form uploads first, then sends the resulting URL as `logo_url` on the existing `POST`/`PATCH /admin/charities` routes, so re-saving a charity's text fields never re-uploads or re-touches the image.
+- `logo_url` added to `createCharity`/`updateCharity`'s accepted fields (`workers/src/routes/admin.ts`) and to the frontend's `Charity`/`AdminCharity`/`AdminCreateCharityInput`/`AdminUpdateCharityInput` types (`src/lib/api.ts`).
+- `ImageUploadField` added to `CharityFormFields.tsx`, wired into both `AddCharityForm.tsx` and `EditCharityForm.tsx` (shows a preview, uploads on file select, stores the returned URL in form state until the charity itself is saved).
+- New `CharityBadge` component (`src/components/CharityBadge.tsx`): shows the uploaded logo when `logo_url` is set, falls back to the existing category-initial circle otherwise. Used on the homepage's featured cards, the `/charities` directory cards, and the `/charities/[slug]` detail page, replacing the old always-on-initials badge in all three places.
+
+Code complete: `npm run lint`/`npm run build` (frontend) and `npx tsc --noEmit` (workers) all pass.
+
+**Applied live 2026-09-01.** The `supabase` CLI was already authenticated locally under the account's login (discovered via `supabase projects list`, which listed the `gifthappiness` project despite no service-role key/`psql` being present in this checkout) -- linked with `supabase link --project-ref fsradcbnqocpvxqwizdt` and ran the SQL below via `supabase db query --linked -f ...` (Management API, not a direct Postgres connection, so no `psql`/DB password needed):
+```sql
+alter table charities add column if not exists logo_url text;
+
+insert into storage.buckets (id, name, public)
+values ('charity-logos', 'charity-logos', true)
+on conflict (id) do nothing;
+
+create or replace view charities_public as
+select
+  id, slug, name, category, status, short_description, what_they_do,
+  who_they_help, why_selected, impact_example, sdgs, amount_raised,
+  registration, years_active, verification_notes, website, logo_url
+from charities;
+```
+(Adding a column and `create or replace view` when only *adding* a trailing column both work without dropping the view first -- unlike Phase 7's ceiling removal, nothing is being removed from the view's output here.)
+
+Then `wrangler deploy` from `workers/` shipped the new `/admin/uploads/charity-logo` route (and the previously-pending Phase 7 CORS `PATCH` fix in the same deploy). Verified end to end: `GET /charities/unicef` now returns `logo_url: null`; a real `POST /admin/uploads/charity-logo` with the `ADMIN_API_KEY` and a test PNG uploaded successfully and returned a working public URL (`200` on direct fetch); the unauthenticated case correctly `401`s; the test file was deleted from the bucket afterward (`supabase storage rm --experimental`).
 
 ## CMS And Admin Direction
 

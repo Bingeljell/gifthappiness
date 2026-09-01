@@ -77,6 +77,7 @@ export type Charity = {
   years_active: number | null;
   verification_notes: string | null;
   website: string | null;
+  logo_url: string | null;
 };
 
 export function getCharities(): Promise<ApiResult<{ charities: Charity[] }>> {
@@ -221,6 +222,7 @@ export type AdminCharity = {
   years_active: number | null;
   verification_notes: string | null;
   website: string | null;
+  logo_url: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -245,7 +247,35 @@ export type AdminCreateCharityInput = {
   yearsActive?: number;
   verificationNotes?: string;
   website?: string;
+  logoUrl?: string;
 };
+
+// Separate from apiFetch: this sends multipart/form-data (the browser sets
+// its own Content-Type with a boundary), so it can't reuse the
+// "Content-Type: application/json" default in apiFetch above.
+export async function adminUploadCharityLogo(token: string, file: File): Promise<ApiResult<{ url: string }>> {
+  const form = new FormData();
+  form.append("file", file);
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/uploads/charity-logo`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: form,
+    });
+
+    const body = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      const message = (body && typeof body === "object" && "error" in body ? String(body.error) : null) ?? `Request failed (${response.status})`;
+      return { ok: false, error: message };
+    }
+
+    return { ok: true, data: body as { url: string } };
+  } catch {
+    return { ok: false, error: "Could not reach the GiftHappiness API. The backend isn't deployed yet." };
+  }
+}
 
 export function adminCreateCharity(token: string, input: AdminCreateCharityInput): Promise<ApiResult<{ charity: AdminCharity }>> {
   return apiFetch("/admin/charities", {
@@ -273,6 +303,7 @@ export type AdminUpdateCharityInput = Partial<{
   years_active: number | null;
   verification_notes: string;
   website: string;
+  logo_url: string;
 }>;
 
 export function adminUpdateCharity(

@@ -54,6 +54,7 @@ export async function createCharity(request: Request, env: Env): Promise<Respons
       years_active: body.yearsActive ? Number(body.yearsActive) : null,
       verification_notes: optionalString(body.verificationNotes, "verificationNotes"),
       website: optionalString(body.website, "website"),
+      logo_url: optionalString(body.logoUrl, "logoUrl"),
     };
 
     const supabase = getSupabaseClient(env);
@@ -94,6 +95,7 @@ export async function updateCharity(slug: string, request: Request, env: Env): P
       "years_active",
       "verification_notes",
       "website",
+      "logo_url",
     ] as const;
 
     const updates: Record<string, unknown> = {};

@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { AlertCircle, Gift, Heart, Loader2, Quote, ShieldCheck, Share2 } from "lucide-react";
+import { AlertCircle, Gift, Heart, Loader2, ShieldCheck, Share2 } from "lucide-react";
 import { getCharities, type Charity } from "@/lib/api";
+import CharityBadge from "@/components/CharityBadge";
 
 const steps = [
   {
@@ -30,27 +31,6 @@ const criteria = [
   "Registered NGO or charity.",
   "Minimum three years of existence.",
   "No relationship with the promoters of GiftHappiness.",
-];
-
-const contributorMessages = [
-  {
-    name: "Ananya R.",
-    celebration: "Aarav's birthday",
-    charity: "UNICEF",
-    message: "Such a thoughtful way to celebrate. Happy birthday, Aarav. This gift feels meaningful.",
-  },
-  {
-    name: "Rohan S.",
-    celebration: "Meera and Kabir's wedding",
-    charity: "WWF",
-    message: "Wishing you both a beautiful life together. Loved contributing to a cause you care about.",
-  },
-  {
-    name: "Anonymous contributor",
-    celebration: "Nisha's anniversary",
-    charity: "Save the Children",
-    message: "Thank you for turning a personal milestone into something that helps others.",
-  },
 ];
 
 type FeaturedState =
@@ -171,8 +151,8 @@ export default function Home() {
                   href={`/charities/${charity.slug}`}
                   className="bg-white rounded-[40px] p-10 border border-gray-100 shadow-sm hover:shadow-2xl hover:shadow-gray-200 transition-all duration-500 group block"
                 >
-                  <div className="w-16 h-16 rounded-full bg-soft-pink text-primary-pink flex items-center justify-center mb-8 font-black text-sm">
-                    {charity.category.slice(0, 2).toUpperCase()}
+                  <div className="mb-8">
+                    <CharityBadge logoUrl={charity.logo_url} category={charity.category} size="lg" />
                   </div>
                   <div className="text-xs font-black text-primary-pink uppercase tracking-widest mb-3">{charity.category}</div>
                   <h4 className="text-3xl font-black text-gray-900 mb-6">{charity.name}</h4>
@@ -201,54 +181,6 @@ export default function Home() {
                 ))}
               </ul>
             </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="py-32 bg-white">
-        <div className="container mx-auto px-4 text-center">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-primary-pink font-black text-sm uppercase tracking-[0.2em] mb-12">Real Stories: Celebrations That Mattered</h2>
-            <div className="relative">
-              <Quote className="absolute -top-16 left-0 w-32 h-32 text-primary-pink opacity-5 -z-10" />
-              <p className="text-4xl md:text-5xl font-bold text-gray-900 leading-tight mb-16 italic tracking-tight">
-                &ldquo;Instead of more things I did not need, my friends donated to a children&apos;s hospital in my name. I cried happy tears all day.&rdquo;
-              </p>
-              <div className="flex flex-col items-center">
-                <div className="w-20 h-20 rounded-full bg-primary-pink flex items-center justify-center mb-6 shadow-xl shadow-primary-pink/30 rotate-3">
-                  <Heart className="w-10 h-10 text-white fill-white" />
-                </div>
-                <div className="text-2xl font-black text-gray-900">Sarah M.</div>
-                <div className="text-base font-bold text-primary-pink">50th Birthday</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="py-32 bg-[#FFF4ED]">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8 mb-16">
-            <div className="max-w-2xl">
-              <h2 className="text-primary-pink font-black text-sm uppercase tracking-[0.2em] mb-4">Contributor Messages</h2>
-              <h3 className="text-4xl md:text-5xl font-black text-gray-900 leading-tight">Small notes from celebrations with purpose.</h3>
-            </div>
-            <p className="text-gray-600 max-w-md text-lg font-medium leading-relaxed">
-              Across celebrations, friends and family can leave a note with their contribution, with privacy controls for what appears publicly.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {contributorMessages.map((item) => (
-              <article key={`${item.name}-${item.celebration}`} className="bg-white border border-gray-100 rounded-[32px] p-8 shadow-sm">
-                <div className="text-xs font-black text-primary-pink uppercase tracking-widest mb-4">{item.charity}</div>
-                <p className="text-xl font-bold text-gray-900 leading-snug mb-8">&ldquo;{item.message}&rdquo;</p>
-                <div className="border-t border-gray-100 pt-5">
-                  <div className="font-black text-gray-900">{item.name}</div>
-                  <div className="text-sm font-semibold text-gray-500">{item.celebration}</div>
-                </div>
-              </article>
-            ))}
           </div>
         </div>
       </section>

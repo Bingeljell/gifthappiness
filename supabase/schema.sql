@@ -75,6 +75,11 @@ create table if not exists charities (
   -- goal concept -- charities are supported, not capped (product decision
   -- 2026-08-19, see docs/plan.md "Phase 7: Live Charity Data" follow-up).
   website text,
+  -- Public URL into the charity-logos Storage bucket below, set via the
+  -- admin logo upload endpoint (workers/src/routes/uploads.ts). Null until
+  -- an admin uploads one -- the frontend falls back to a category-initial
+  -- badge (see docs/plan.md "Phase 8: Charity Pictures").
+  logo_url text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -203,7 +208,7 @@ create or replace view charities_public as
 select
   id, slug, name, category, status, short_description, what_they_do,
   who_they_help, why_selected, impact_example, sdgs, amount_raised,
-  registration, years_active, verification_notes, website
+  registration, years_active, verification_notes, website, logo_url
 from charities;
 
 create or replace view celebrations_public as
@@ -231,3 +236,14 @@ from contributions
 where payment_status = 'succeeded';
 
 grant select on charities_public, celebrations_public, contributions_public to anon, authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Storage: public bucket for charity logo/photo uploads (see charities.logo_url
+-- above and workers/src/routes/uploads.ts). Public so the plain image URL
+-- served back to the frontend works with no auth; there's no anon INSERT
+-- policy, so only the Worker (service role, bypasses Storage RLS same as it
+-- does for tables) can write to it.
+-- ---------------------------------------------------------------------------
+insert into storage.buckets (id, name, public)
+values ('charity-logos', 'charity-logos', true)
+on conflict (id) do nothing;
