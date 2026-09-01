@@ -249,7 +249,7 @@ export default function CreateCelebration() {
                 className="flex items-center gap-2 px-8 py-4 rounded-2xl bg-primary-pink text-white font-bold hover:bg-primary-pink/90 transition-all shadow-lg shadow-primary-pink/20 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {publish.status === "submitting" && <Loader2 className="w-5 h-5 animate-spin" />}
-                {publish.status === "success" ? "Published" : "Publish"}
+                {publish.status === "success" ? "Submitted" : "Submit for review"}
               </button>
             )}
           </div>
@@ -517,7 +517,7 @@ function StepPreviewAndPublish({
         <div className="flex items-start gap-3 rounded-2xl bg-green-50 border border-green-200 p-5 text-green-800">
           <Check className="w-5 h-5 shrink-0 mt-0.5" />
           <p className="text-sm font-semibold">
-            Created as <code>{publish.slug}</code>. It&apos;s saved as a draft in the database.
+            Submitted as <code>{publish.slug}</code>. A GiftHappiness admin needs to review and approve it before the page goes live.
           </p>
         </div>
       )}

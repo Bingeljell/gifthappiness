@@ -7,6 +7,7 @@ import { adminListCharities, adminDeleteCharity, type AdminCharity } from "@/lib
 import { useSession } from "@/lib/session";
 import AddCharityForm from "./AddCharityForm";
 import EditCharityForm from "./EditCharityForm";
+import AdminCelebrations from "./AdminCelebrations";
 
 type CharitiesState =
   | { status: "loading" }
@@ -201,6 +202,19 @@ export default function AdminPage() {
                 ),
               )}
           </div>
+        </div>
+
+        <div className="mt-8 bg-white/95 backdrop-blur-md rounded-[40px] p-8 md:p-12 shadow-2xl border border-white/70">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 rounded-full bg-primary-pink flex items-center justify-center">
+              <ShieldCheck className="w-5 h-5 text-white" />
+            </div>
+            <h1 className="text-xl font-bold text-gray-900">Celebrations</h1>
+          </div>
+          <p className="text-sm text-gray-500 mb-6">
+            Every celebration needs approval here before it goes live on its public page.
+          </p>
+          <AdminCelebrations token={token} />
         </div>
       </div>
     </div>
