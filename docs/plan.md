@@ -339,6 +339,25 @@ Code complete: `npm run lint`/`npm run build` (frontend) and `npx tsc --noEmit` 
 
 **Applied live 2026-09-01**, same mechanism as Phase 8 (`supabase link` + `supabase db query --linked`, no service-role key/`psql` needed): added the column, created the `charity-headers` bucket, and updated the view. `wrangler deploy` shipped the new route. Verified end to end the same way as Phase 8's logo upload: `GET /charities/unicef` returns `header_image_url`; a real authenticated upload to `/admin/uploads/charity-header` succeeded and returned a working public URL; the test file was deleted from the bucket afterward.
 
+### Bug fix: logo cropping (2026-09-01)
+
+Reported after the first real logo upload (YODA's logo): `CharityBadge`'s public rendering and the admin form's logo preview both used `object-cover` on a fixed-size circle/square, which crops a non-square logo to fill the shape rather than showing the whole mark. Switched both to `object-contain` with a white background + small padding. The header/marquee banner is unaffected -- `object-cover` stays correct there, since cropping a wide photo's edges is expected/fine, unlike a logo where every part of the mark matters. Frontend-only, no schema/backend change, no re-upload needed for already-uploaded logos (this only changed how the stored image is displayed).
+
+## Phase 8c: Delete A Charity (2026-09-01)
+
+Product context: charities can already be retired via the existing `status: 'completed'` field, but there was no way to actually remove one -- surfaced when the user wanted to delete the `unicef` test/dummy charity and couldn't. Framed as "we may want to swap charities out in the future" -- a genuine ongoing need, not just cleanup of test data.
+
+Decision: real delete, but blocked server-side if any celebration has ever pointed at the charity (`celebrations.charity_id` has no cascade rule, and donation history shouldn't silently disappear). For a charity that's actually been used, `status: 'completed'` remains the intended way to retire it -- delete is for charities that were never actually used (test/dummy entries, or one added and reconsidered before launch).
+
+- `DELETE /admin/charities/:slug` (`workers/src/routes/admin.ts`, admin-gated same as the other admin routes): looks up the charity, counts `celebrations` rows referencing its id (`select count, head: true` -- no rows fetched), returns `409` with the count if nonzero, otherwise deletes and returns `{ deleted: true }`.
+- **Found and fixed the same CORS bug class as Phase 7's `PATCH` fix**: `Access-Control-Allow-Methods` didn't list `DELETE` either -- added it in the same pass rather than waiting to hit it live.
+- `adminDeleteCharity` added to the API client (`src/lib/api.ts`).
+- `/admin`'s charity list (`src/app/admin/page.tsx`) gained a Delete button per row with an inline two-step confirm ("Delete X? This can't be undone" + Confirm/Cancel, not a native `confirm()` dialog, to match the app's existing UI patterns) and an inline error message if the backend refuses (e.g. "This charity has 3 celebrations tied to it and can't be deleted").
+
+Code complete: `npm run lint`/`npm run build` (frontend) and `npx tsc --noEmit` (workers) all pass.
+
+**Applied live 2026-09-01**: `wrangler deploy` shipped the new route (no schema/DB migration needed -- delete doesn't add any new column/table). Verified end to end: created a real throwaway test charity via the API, confirmed unauthenticated `DELETE` 401s, confirmed an authenticated `DELETE` removes it (`GET` afterward correctly 404s), confirmed the `OPTIONS` preflight now lists `DELETE`. Did not test the "blocked because celebrations exist" path against a real charity (UNICEF/YODA) to avoid any risk of actually deleting one if the celebration count happened to be zero -- the block logic was verified by code review instead, following the same count-then-act pattern already used elsewhere in this file.
+
 ## CMS And Admin Direction
 
 Superseded by Phase 6 above for auth/roles specifically; the sections below (content-management scope, non-auth admin decisions) still stand.

@@ -330,3 +330,13 @@ export function adminUpdateCharity(
     body: JSON.stringify(input),
   });
 }
+
+// Refused server-side (409) if any celebration has ever pointed at this
+// charity -- see workers/src/routes/admin.ts's deleteCharity. For a used
+// charity, updating status to "completed" is the intended way to retire it.
+export function adminDeleteCharity(token: string, slug: string): Promise<ApiResult<{ deleted: boolean }>> {
+  return apiFetch(`/admin/charities/${encodeURIComponent(slug)}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}

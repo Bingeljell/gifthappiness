@@ -134,3 +134,47 @@ export async function updateCharity(slug: string, request: Request, env: Env): P
     return errorResponse("Unexpected error", env, 500);
   }
 }
+
+// DELETE /admin/charities/:slug -- refuses if any celebration has ever
+// pointed at this charity (celebrations.charity_id has no cascade rule, and
+// donation history shouldn't silently disappear). For a charity that's been
+// used, the existing `status: 'completed'` update is the intended way to
+// retire it; this route is for removing charities that were never actually
+// used (test/dummy entries, or one added and reconsidered before launch).
+export async function deleteCharity(slug: string, request: Request, env: Env): Promise<Response> {
+  if (!(await isAuthorizedAdmin(request, env))) {
+    return errorResponse("Unauthorized", env, 401);
+  }
+
+  const supabase = getSupabaseClient(env);
+
+  const { data: charity, error: findError } = await supabase.from("charities").select("id").eq("slug", slug).maybeSingle();
+  if (findError) {
+    return errorResponse("Could not look up charity", env, 500);
+  }
+  if (!charity) {
+    return errorResponse("Charity not found", env, 404);
+  }
+
+  const { count, error: countError } = await supabase
+    .from("celebrations")
+    .select("id", { count: "exact", head: true })
+    .eq("charity_id", charity.id);
+  if (countError) {
+    return errorResponse("Could not check for existing celebrations", env, 500);
+  }
+  if (count && count > 0) {
+    return errorResponse(
+      `This charity has ${count} celebration${count === 1 ? "" : "s"} tied to it and can't be deleted. Mark it "completed" instead.`,
+      env,
+      409,
+    );
+  }
+
+  const { error: deleteError } = await supabase.from("charities").delete().eq("slug", slug);
+  if (deleteError) {
+    return errorResponse("Could not delete charity", env, 500);
+  }
+
+  return json({ deleted: true }, env);
+}

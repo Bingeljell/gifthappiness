@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertCircle, Loader2, Pencil, ShieldAlert, ShieldCheck } from "lucide-react";
-import { adminListCharities, type AdminCharity } from "@/lib/api";
+import { AlertCircle, Loader2, Pencil, ShieldAlert, ShieldCheck, Trash2, X } from "lucide-react";
+import { adminListCharities, adminDeleteCharity, type AdminCharity } from "@/lib/api";
 import { useSession } from "@/lib/session";
 import AddCharityForm from "./AddCharityForm";
 import EditCharityForm from "./EditCharityForm";
@@ -18,6 +18,8 @@ export default function AdminPage() {
   const { user, token, loading } = useSession();
   const [charities, setCharities] = useState<CharitiesState>({ status: "loading" });
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [deleteState, setDeleteState] = useState<{ id: string; status: "deleting" } | { id: string; status: "error"; message: string } | null>(null);
 
   useEffect(() => {
     if (loading) return;
@@ -43,6 +45,19 @@ export default function AdminPage() {
         : prev,
     );
     setEditingId(null);
+  };
+
+  const handleDelete = async (charity: AdminCharity) => {
+    if (!token) return;
+    setDeleteState({ id: charity.id, status: "deleting" });
+    const result = await adminDeleteCharity(token, charity.slug);
+    if (!result.ok) {
+      setDeleteState({ id: charity.id, status: "error", message: result.error });
+      return;
+    }
+    setCharities((prev) => (prev.status === "loaded" ? { status: "loaded", charities: prev.charities.filter((c) => c.id !== charity.id) } : prev));
+    setConfirmingId(null);
+    setDeleteState(null);
   };
 
   if (loading || !user || !token) {
@@ -109,25 +124,79 @@ export default function AdminPage() {
                 editingId === c.id ? (
                   <EditCharityForm key={c.id} charity={c} token={token} onSaved={handleSaved} onCancel={() => setEditingId(null)} />
                 ) : (
-                  <div key={c.id} className="rounded-2xl bg-white border border-gray-200 p-5 flex items-center justify-between gap-4">
-                    <div>
-                      <p className="font-bold text-gray-900">{c.name}</p>
-                      <p className="text-sm text-gray-500">
-                        {c.slug} &middot; {c.category} &middot; ₹{c.amount_raised.toLocaleString("en-IN")} raised
+                  <div key={c.id} className="rounded-2xl bg-white border border-gray-200 p-5">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="font-bold text-gray-900">{c.name}</p>
+                        <p className="text-sm text-gray-500">
+                          {c.slug} &middot; {c.category} &middot; ₹{c.amount_raised.toLocaleString("en-IN")} raised
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3 shrink-0">
+                        <span className="text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full bg-gray-100 text-gray-600">
+                          {c.status}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setEditingId(c.id)}
+                          className="flex items-center gap-1.5 text-sm font-bold text-primary-pink hover:underline"
+                        >
+                          <Pencil className="w-3.5 h-3.5" /> Edit
+                        </button>
+                        {confirmingId !== c.id && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setConfirmingId(c.id);
+                              setDeleteState(null);
+                            }}
+                            className="flex items-center gap-1.5 text-sm font-bold text-gray-400 hover:text-red-600"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" /> Delete
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {confirmingId === c.id && (
+                      <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between gap-4">
+                        <p className="text-sm font-semibold text-gray-700">
+                          Delete {c.name}? This can&apos;t be undone.
+                        </p>
+                        <div className="flex items-center gap-3 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(c)}
+                            disabled={deleteState?.id === c.id && deleteState.status === "deleting"}
+                            className="flex items-center gap-1.5 text-sm font-bold text-white bg-red-600 hover:bg-red-700 px-4 py-2 rounded-xl disabled:opacity-60"
+                          >
+                            {deleteState?.id === c.id && deleteState.status === "deleting" ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-3.5 h-3.5" />
+                            )}
+                            Confirm delete
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setConfirmingId(null);
+                              setDeleteState(null);
+                            }}
+                            className="flex items-center gap-1.5 text-sm font-bold text-gray-500 hover:text-gray-700"
+                          >
+                            <X className="w-3.5 h-3.5" /> Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {deleteState?.id === c.id && deleteState.status === "error" && (
+                      <p className="mt-3 flex items-start gap-2 text-sm font-semibold text-primary-pink">
+                        <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                        {deleteState.message}
                       </p>
-                    </div>
-                    <div className="flex items-center gap-3 shrink-0">
-                      <span className="text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full bg-gray-100 text-gray-600">
-                        {c.status}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setEditingId(c.id)}
-                        className="flex items-center gap-1.5 text-sm font-bold text-primary-pink hover:underline"
-                      >
-                        <Pencil className="w-3.5 h-3.5" /> Edit
-                      </button>
-                    </div>
+                    )}
                   </div>
                 ),
               )}
