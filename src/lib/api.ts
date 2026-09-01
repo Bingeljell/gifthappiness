@@ -340,3 +340,54 @@ export function adminDeleteCharity(token: string, slug: string): Promise<ApiResu
     headers: { Authorization: `Bearer ${token}` },
   });
 }
+
+// Celebrations have no "completed" status (product decision 2026-09-01) --
+// 'expired' already means "this celebration's active window is over", so
+// admins mark one done by reusing it rather than adding a new value.
+export type CelebrationStatus = "draft" | "published" | "expired" | "flagged";
+
+export type AdminCelebration = {
+  id: string;
+  slug: string;
+  celebration_type: string;
+  celebration_date: string | null;
+  active_from: string | null;
+  active_till: string | null;
+  status: CelebrationStatus;
+  message: string | null;
+  created_at: string;
+  host: { name: string | null; email: string; mobile: string | null } | null;
+  charity: { name: string; slug: string } | null;
+};
+
+export function adminListCelebrations(token: string): Promise<ApiResult<{ celebrations: AdminCelebration[] }>> {
+  return apiFetch("/admin/celebrations", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+// Doubles as the approval mechanism (status: "published") and a general
+// admin edit (celebration_type/date/active window/message), for fixing a
+// celebration that has something wrong with it. Matches
+// workers/src/routes/adminCelebrations.ts's updateCelebration, which reads
+// these camelCase keys off the raw request body.
+export type AdminUpdateCelebrationInput = Partial<{
+  status: CelebrationStatus;
+  celebrationType: string;
+  celebrationDate: string;
+  activeFrom: string;
+  activeTill: string;
+  message: string;
+}>;
+
+export function adminUpdateCelebration(
+  token: string,
+  slug: string,
+  input: AdminUpdateCelebrationInput,
+): Promise<ApiResult<{ celebration: AdminCelebration }>> {
+  return apiFetch(`/admin/celebrations/${encodeURIComponent(slug)}`, {
+    method: "PATCH",
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify(input),
+  });
+}
