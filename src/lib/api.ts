@@ -391,3 +391,15 @@ export function adminUpdateCelebration(
     body: JSON.stringify(input),
   });
 }
+
+// Refused server-side (409) unless the celebration is 'draft' or 'expired'
+// (a published/flagged one needs a status change first), and also refused
+// if any contribution references it (contributions cascade-delete with
+// their celebration, so one that collected real money must stay deletable
+// -- see workers/src/routes/adminCelebrations.ts's deleteCelebration).
+export function adminDeleteCelebration(token: string, slug: string): Promise<ApiResult<{ deleted: boolean }>> {
+  return apiFetch(`/admin/celebrations/${encodeURIComponent(slug)}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}

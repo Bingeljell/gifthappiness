@@ -107,3 +107,54 @@ export async function updateCelebration(slug: string, request: Request, env: Env
     return errorResponse("Unexpected error", env, 500);
   }
 }
+
+// DELETE /admin/celebrations/:slug -- for removing a celebration that was
+// never actually used (a leftover 'draft' a host abandoned, or a smoke-test
+// record like the one that surfaced this: a real UNICEF-blocking-delete case
+// turned out to be exactly this kind of leftover, not real donor data).
+// Deliberately narrower than deleteCharity in admin.ts: refuses outright on
+// 'published'/'flagged' (those need a status change first, not a delete),
+// and separately refuses if any contribution references it -- contributions
+// cascade-delete with their celebration (`on delete cascade`), so a
+// celebration that collected real money must never be deletable at all,
+// regardless of its current status.
+export async function deleteCelebration(slug: string, request: Request, env: Env): Promise<Response> {
+  if (!(await isAuthorizedAdmin(request, env))) {
+    return errorResponse("Unauthorized", env, 401);
+  }
+
+  const supabase = getSupabaseClient(env);
+
+  const { data: celebration, error: findError } = await supabase.from("celebrations").select("id, status").eq("slug", slug).maybeSingle();
+  if (findError) {
+    return errorResponse("Could not look up celebration", env, 500);
+  }
+  if (!celebration) {
+    return errorResponse("Celebration not found", env, 404);
+  }
+  if (celebration.status !== "draft" && celebration.status !== "expired") {
+    return errorResponse(`Can't delete a ${celebration.status} celebration -- change its status first (e.g. mark it complete).`, env, 409);
+  }
+
+  const { count, error: countError } = await supabase
+    .from("contributions")
+    .select("id", { count: "exact", head: true })
+    .eq("celebration_id", celebration.id);
+  if (countError) {
+    return errorResponse("Could not check for existing contributions", env, 500);
+  }
+  if (count && count > 0) {
+    return errorResponse(
+      `This celebration has ${count} contribution${count === 1 ? "" : "s"} tied to it and can't be deleted.`,
+      env,
+      409,
+    );
+  }
+
+  const { error: deleteError } = await supabase.from("celebrations").delete().eq("slug", slug);
+  if (deleteError) {
+    return errorResponse("Could not delete celebration", env, 500);
+  }
+
+  return json({ deleted: true }, env);
+}

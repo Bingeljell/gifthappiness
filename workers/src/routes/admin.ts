@@ -165,7 +165,7 @@ export async function deleteCharity(slug: string, request: Request, env: Env): P
   }
   if (count && count > 0) {
     return errorResponse(
-      `This charity has ${count} celebration${count === 1 ? "" : "s"} tied to it and can't be deleted. Mark it "completed" instead.`,
+      `This charity has ${count} celebration${count === 1 ? "" : "s"} tied to it and can't be deleted. Set the charity's own Status to "completed" instead, or delete the celebration(s) first if they were never actually used.`,
       env,
       409,
     );

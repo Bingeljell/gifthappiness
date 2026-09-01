@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
-import { AlertCircle, Check, Flag, Loader2, Pencil, RotateCcw, X } from "lucide-react";
+import { AlertCircle, Check, Flag, Loader2, Pencil, RotateCcw, Trash2, X } from "lucide-react";
 import {
   adminListCelebrations,
   adminUpdateCelebration,
+  adminDeleteCelebration,
   type AdminCelebration,
   type AdminUpdateCelebrationInput,
   type CelebrationStatus,
@@ -29,6 +30,7 @@ export default function AdminCelebrations({ token }: { token: string }) {
   const [celebrations, setCelebrations] = useState<ListState>({ status: "loading" });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [action, setAction] = useState<ActionState>(null);
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     adminListCelebrations(token).then((result) => {
@@ -56,6 +58,18 @@ export default function AdminCelebrations({ token }: { token: string }) {
   const handleSaved = (updated: AdminCelebration) => {
     applyUpdate(updated);
     setEditingId(null);
+  };
+
+  const handleDelete = async (c: AdminCelebration) => {
+    setAction({ id: c.id, kind: "working" });
+    const result = await adminDeleteCelebration(token, c.slug);
+    if (!result.ok) {
+      setAction({ id: c.id, kind: "error", message: result.error });
+      return;
+    }
+    setCelebrations((prev) => (prev.status === "loaded" ? { status: "loaded", celebrations: prev.celebrations.filter((x) => x.id !== c.id) } : prev));
+    setConfirmingDeleteId(null);
+    setAction(null);
   };
 
   if (celebrations.status === "loading") {
@@ -152,7 +166,46 @@ export default function AdminCelebrations({ token }: { token: string }) {
               >
                 <Pencil className="w-3.5 h-3.5" /> Edit
               </button>
+              {(c.status === "draft" || c.status === "expired") && confirmingDeleteId !== c.id && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setConfirmingDeleteId(c.id);
+                    setAction(null);
+                  }}
+                  className="flex items-center gap-1.5 text-sm font-bold text-gray-400 hover:text-red-600"
+                >
+                  <Trash2 className="w-3.5 h-3.5" /> Delete
+                </button>
+              )}
             </div>
+
+            {confirmingDeleteId === c.id && (
+              <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between gap-4">
+                <p className="text-sm font-semibold text-gray-700">Delete this celebration? This can&apos;t be undone.</p>
+                <div className="flex items-center gap-3 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(c)}
+                    disabled={action?.id === c.id && action.kind === "working"}
+                    className="flex items-center gap-1.5 text-sm font-bold text-white bg-red-600 hover:bg-red-700 px-4 py-2 rounded-xl disabled:opacity-60"
+                  >
+                    {action?.id === c.id && action.kind === "working" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                    Confirm delete
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setConfirmingDeleteId(null);
+                      setAction(null);
+                    }}
+                    className="flex items-center gap-1.5 text-sm font-bold text-gray-500 hover:text-gray-700"
+                  >
+                    <X className="w-3.5 h-3.5" /> Cancel
+                  </button>
+                </div>
+              </div>
+            )}
 
             {action?.id === c.id && action.kind === "error" && (
               <p className="mt-3 flex items-start gap-2 text-sm font-semibold text-primary-pink">
