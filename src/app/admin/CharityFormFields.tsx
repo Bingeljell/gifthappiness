@@ -78,7 +78,10 @@ export function ImageUploadField({ id, token, value, onChange }: { id: string; t
       value={value}
       onChange={onChange}
       upload={adminUploadCharityLogo}
-      previewClassName="w-16 h-16 rounded-2xl object-cover border border-gray-200"
+      // object-contain (not cover), with a white background + a little
+      // padding -- matches CharityBadge's public rendering. A logo's whole
+      // mark matters, unlike a photo where cropping the edges is fine.
+      previewClassName="w-16 h-16 rounded-2xl object-contain bg-white p-1.5 border border-gray-200"
     />
   );
 }
