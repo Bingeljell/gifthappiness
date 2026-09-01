@@ -6,7 +6,7 @@ import { submitContribution } from "./routes/contributions";
 import { requestVerification, confirmVerification } from "./routes/verification";
 import { requestLogin, confirmLogin, getMe, logout } from "./routes/auth";
 import { listMyCelebrations, listMyContributions } from "./routes/me";
-import { listCharitiesAdmin, createCharity, updateCharity } from "./routes/admin";
+import { listCharitiesAdmin, createCharity, updateCharity, deleteCharity } from "./routes/admin";
 import { uploadCharityLogo, uploadCharityHeader } from "./routes/uploads";
 
 // Hand-rolled routing: the route count here doesn't justify pulling in a
@@ -95,6 +95,7 @@ const worker = {
       if (method === "GET" && segments.length === 2) return listCharitiesAdmin(request, env);
       if (method === "POST" && segments.length === 2) return createCharity(request, env);
       if (method === "PATCH" && segments.length === 3) return updateCharity(segments[2], request, env);
+      if (method === "DELETE" && segments.length === 3) return deleteCharity(segments[2], request, env);
     }
 
     // POST /admin/uploads/charity-logo
