@@ -380,6 +380,16 @@ Code complete: `npm run lint`/`npm run build` (frontend) and `npx tsc --noEmit` 
 
 **Known follow-on gap, not addressed here**: even a `published` celebration still has no dedicated public page at a real per-celebration URL -- `/celebration` (singular, no slug) posts contributions to a hardcoded `"demo"` slug (a different pre-existing open TODO, see Phase 5's backend work items above). Approval now correctly gates what's *allowed* to be shown publicly; wiring an actual `/celebration/[slug]` route is separate, unstarted work.
 
+### Follow-up: celebration delete + a confusing error message (2026-09-01)
+
+Surfaced immediately after Phase 9 shipped: the user tried deleting the `unicef` test/dummy charity (the thing Phase 8c's charity-delete was built for) and got refused -- `deleteCharity` (Phase 8c) blocks on *any* celebration referencing the charity regardless of that celebration's own status, and the real `test-host-birthday-...` smoke-test celebration used in Phase 9's live verification above happened to reference `unicef`. Marking that celebration "complete" (`expired`) doesn't remove the row or its `charity_id` link, so the block was working exactly as designed -- but `deleteCharity`'s error message said `Mark it "completed" instead`, which reads as "mark the *celebration* complete" now that that's a real, separate action; it actually meant the *charity's* own `status` field. Confirmed the mechanism directly against the live DB (`supabase db query --linked`) before concluding this -- joined `celebrations`/`charities` and saw the celebration really was `expired` while still pointing at `unicef`.
+
+Two fixes:
+1. **Reworded `deleteCharity`'s 409 message** (`workers/src/routes/admin.ts`) to disambiguate: `"...Set the charity's own Status to \"completed\" instead, or delete the celebration(s) first if they were never actually used."`
+2. **Added `DELETE /admin/celebrations/:slug`** (`workers/src/routes/adminCelebrations.ts`), narrower than `deleteCharity`: refuses outright unless the celebration is `draft` or `expired` (a `published`/`flagged` one needs a status change first, not a delete), and separately refuses if any `contributions` row references it -- contributions cascade-delete with their celebration (`on delete cascade`), so a celebration that ever collected real money must stay undeletable regardless of its status. `adminDeleteCelebration` added to the API client; `AdminCelebrations.tsx` gained a Delete button (shown only for `draft`/`expired` rows) with the same inline two-step confirm pattern as the charity list.
+
+**Applied live 2026-09-01**: `wrangler deploy` shipped both. Verified end to end by resolving the actual reported case: deleted the leftover `test-host-birthday-...` celebration, then successfully deleted `unicef` -- confirmed via `GET /charities` that only `yoda` remains.
+
 ## CMS And Admin Direction
 
 Superseded by Phase 6 above for auth/roles specifically; the sections below (content-management scope, non-auth admin decisions) still stand.
