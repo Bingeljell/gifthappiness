@@ -79,6 +79,15 @@ export default function CharityDetailClient() {
             &larr; Back to all charities
           </Link>
 
+          {charity.header_image_url && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={charity.header_image_url}
+              alt={`${charity.name} header`}
+              className="w-full h-56 md:h-80 object-cover rounded-[40px] mb-10 border border-gray-100"
+            />
+          )}
+
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-10 items-start">
             <div className="bg-white border border-gray-100 rounded-[40px] p-8 md:p-12 shadow-sm">
               <div className="flex items-start justify-between gap-4 mb-8">

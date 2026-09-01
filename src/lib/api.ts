@@ -78,6 +78,7 @@ export type Charity = {
   verification_notes: string | null;
   website: string | null;
   logo_url: string | null;
+  header_image_url: string | null;
 };
 
 export function getCharities(): Promise<ApiResult<{ charities: Charity[] }>> {
@@ -223,6 +224,7 @@ export type AdminCharity = {
   verification_notes: string | null;
   website: string | null;
   logo_url: string | null;
+  header_image_url: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -248,17 +250,19 @@ export type AdminCreateCharityInput = {
   verificationNotes?: string;
   website?: string;
   logoUrl?: string;
+  headerImageUrl?: string;
 };
 
 // Separate from apiFetch: this sends multipart/form-data (the browser sets
 // its own Content-Type with a boundary), so it can't reuse the
-// "Content-Type: application/json" default in apiFetch above.
-export async function adminUploadCharityLogo(token: string, file: File): Promise<ApiResult<{ url: string }>> {
+// "Content-Type: application/json" default in apiFetch above. Shared by
+// both charity image upload fields below.
+async function adminUploadCharityImage(token: string, endpoint: string, file: File): Promise<ApiResult<{ url: string }>> {
   const form = new FormData();
   form.append("file", file);
 
   try {
-    const response = await fetch(`${API_BASE_URL}/admin/uploads/charity-logo`, {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
       body: form,
@@ -275,6 +279,14 @@ export async function adminUploadCharityLogo(token: string, file: File): Promise
   } catch {
     return { ok: false, error: "Could not reach the GiftHappiness API. The backend isn't deployed yet." };
   }
+}
+
+export function adminUploadCharityLogo(token: string, file: File): Promise<ApiResult<{ url: string }>> {
+  return adminUploadCharityImage(token, "/admin/uploads/charity-logo", file);
+}
+
+export function adminUploadCharityHeader(token: string, file: File): Promise<ApiResult<{ url: string }>> {
+  return adminUploadCharityImage(token, "/admin/uploads/charity-header", file);
 }
 
 export function adminCreateCharity(token: string, input: AdminCreateCharityInput): Promise<ApiResult<{ charity: AdminCharity }>> {
@@ -304,6 +316,7 @@ export type AdminUpdateCharityInput = Partial<{
   verification_notes: string;
   website: string;
   logo_url: string;
+  header_image_url: string;
 }>;
 
 export function adminUpdateCharity(

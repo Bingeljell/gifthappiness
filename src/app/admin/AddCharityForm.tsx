@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { AlertCircle, Check, ChevronUp, Loader2, Plus } from "lucide-react";
 import { adminCreateCharity, type AdminCharity } from "@/lib/api";
-import { FormField, ImageUploadField, SdgChecklist } from "./CharityFormFields";
+import { FormField, ImageUploadField, HeaderImageUploadField, SdgChecklist } from "./CharityFormFields";
 
 function slugify(text: string): string {
   return text
@@ -27,6 +27,7 @@ type FormState = {
   verificationNotes: string;
   sdgs: string[];
   logoUrl: string;
+  headerImageUrl: string;
 };
 
 const initialForm: FormState = {
@@ -43,6 +44,7 @@ const initialForm: FormState = {
   verificationNotes: "",
   sdgs: [],
   logoUrl: "",
+  headerImageUrl: "",
 };
 
 type SubmitState = { status: "idle" } | { status: "submitting" } | { status: "error"; message: string };
@@ -92,6 +94,7 @@ export default function AddCharityForm({ token, onCreated }: { token: string; on
       yearsActive: form.yearsActive ? Number(form.yearsActive) : undefined,
       verificationNotes: form.verificationNotes || undefined,
       logoUrl: form.logoUrl || undefined,
+      headerImageUrl: form.headerImageUrl || undefined,
     });
 
     if (!result.ok) {
@@ -133,6 +136,7 @@ export default function AddCharityForm({ token, onCreated }: { token: string; on
 
         <FormField id="charity-category" label="Category" placeholder="e.g. Education, Health, Environment" value={form.category} onChange={(v) => update("category", v)} />
         <ImageUploadField id="charity-logo" token={token} value={form.logoUrl} onChange={(v) => update("logoUrl", v)} />
+        <HeaderImageUploadField id="charity-header" token={token} value={form.headerImageUrl} onChange={(v) => update("headerImageUrl", v)} />
         <FormField id="charity-summary" label="One-line summary" value={form.shortDescription} onChange={(v) => update("shortDescription", v)} />
         <FormField
           id="charity-what"

@@ -149,8 +149,17 @@ export default function Home() {
                 <Link
                   key={charity.slug}
                   href={`/charities/${charity.slug}`}
-                  className="bg-white rounded-[40px] p-10 border border-gray-100 shadow-sm hover:shadow-2xl hover:shadow-gray-200 transition-all duration-500 group block"
+                  className="bg-white rounded-[40px] p-10 border border-gray-100 shadow-sm hover:shadow-2xl hover:shadow-gray-200 transition-all duration-500 group block overflow-hidden"
                 >
+                  {charity.header_image_url && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={charity.header_image_url}
+                      alt=""
+                      className="h-40 object-cover rounded-2xl -mt-10 mb-8"
+                      style={{ width: "calc(100% + 5rem)", marginLeft: "-2.5rem" }}
+                    />
+                  )}
                   <div className="mb-8">
                     <CharityBadge logoUrl={charity.logo_url} category={charity.category} size="lg" />
                   </div>

@@ -320,6 +320,25 @@ from charities;
 
 Then `wrangler deploy` from `workers/` shipped the new `/admin/uploads/charity-logo` route (and the previously-pending Phase 7 CORS `PATCH` fix in the same deploy). Verified end to end: `GET /charities/unicef` now returns `logo_url: null`; a real `POST /admin/uploads/charity-logo` with the `ADMIN_API_KEY` and a test PNG uploaded successfully and returned a working public URL (`200` on direct fetch); the unauthenticated case correctly `401`s; the test file was deleted from the bucket afterward (`supabase storage rm --experimental`).
 
+### Bug fix: `InfoBlock` bullet-stripping regex ate leading numbers (2026-09-01)
+
+Reported live on YODA's charity page: the "Impact example" bullets read ",000+ animals medically treated..." instead of "500,000+ animals...". `CharityDetailClient.tsx`'s `InfoBlock` strips a leading list-marker off each line before rendering it as a bullet (`/^[-•\d.)\s]+/`), but that character class matched bare leading digits too, not just an actual "-"/"•"/"1." marker -- so real content starting with a number (YODA's impact figures) got eaten. Narrowed to `/^(?:[-•]|\d+[.)])\s*/`, which only strips a genuine bullet/dash or an ordered-list prefix ("1." / "1)"), verified against the real YODA text. Frontend-only fix, no backend/schema change.
+
+## Phase 8b: Charity Header Images (2026-09-01)
+
+Client feedback after Phase 8 shipped: `logo_url` (the small square badge, kept as-is) isn't what was meant by "add pictures" -- the ask was a wide header/marquee banner per charity, shown atop the charity's own page and as a cover image on the cards that link to it.
+
+- `charities.header_image_url text` (nullable) added alongside the existing `logo_url`, and to `charities_public`.
+- Second public Storage bucket, `charity-headers` -- kept separate from `charity-logos` rather than reusing one bucket for both image kinds, so filenames (random UUIDs in both) never collide across the two purposes.
+- `workers/src/routes/uploads.ts` refactored: the upload logic (validate type/size, upload to a bucket, return the public URL) is now a shared `uploadCharityImage(request, env, bucket)` helper, with `uploadCharityLogo`/`uploadCharityHeader` as thin wrappers over it for the two buckets. New route `POST /admin/uploads/charity-header`.
+- `header_image_url` added to `createCharity`/`updateCharity`'s accepted fields, and to every relevant frontend type (`Charity`, `AdminCharity`, `AdminCreateCharityInput`, `AdminUpdateCharityInput`).
+- `CharityFormFields.tsx`: extracted the upload-field mechanics into an internal `ImageUploadFieldBase`, with `ImageUploadField` (logo, square preview) and a new `HeaderImageUploadField` (banner, wide preview) as thin wrappers -- both admin forms now show both fields.
+- Rendering: a full-width banner atop the charity detail page (above the two-column info/donate layout) when set; a cover-image strip bled to the card edges (negative-margin technique, since the cards use padding rather than a separate image container) atop each card on `/charities` and the homepage's featured-charity teasers. No change when `header_image_url` is unset -- cards/detail page look exactly as before.
+
+Code complete: `npm run lint`/`npm run build` (frontend) and `npx tsc --noEmit` (workers) all pass.
+
+**Applied live 2026-09-01**, same mechanism as Phase 8 (`supabase link` + `supabase db query --linked`, no service-role key/`psql` needed): added the column, created the `charity-headers` bucket, and updated the view. `wrangler deploy` shipped the new route. Verified end to end the same way as Phase 8's logo upload: `GET /charities/unicef` returns `header_image_url`; a real authenticated upload to `/admin/uploads/charity-header` succeeded and returned a working public URL; the test file was deleted from the bucket afterward.
+
 ## CMS And Admin Direction
 
 Superseded by Phase 6 above for auth/roles specifically; the sections below (content-management scope, non-auth admin decisions) still stand.
