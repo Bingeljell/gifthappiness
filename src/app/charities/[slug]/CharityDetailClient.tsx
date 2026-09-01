@@ -161,7 +161,17 @@ export default function CharityDetailClient() {
 }
 
 function InfoBlock({ icon, label, value, list }: { icon?: ReactNode; label: string; value: string; list?: boolean }) {
-  const items = list ? value.split("\n").map((line) => line.replace(/^[-•\d.)\s]+/, "").trim()).filter(Boolean) : null;
+  // Strips a leading list marker only -- a bare "-"/"•", or "1." / "1)" style
+  // numbering. Deliberately doesn't match bare leading digits, since content
+  // like "500,000+ animals treated" starts with a real number, not a marker
+  // (a broader digit-eating regex here previously ate leading figures like
+  // that down to ",000+").
+  const items = list
+    ? value
+        .split("\n")
+        .map((line) => line.replace(/^(?:[-•]|\d+[.)])\s*/, "").trim())
+        .filter(Boolean)
+    : null;
 
   return (
     <div className="rounded-2xl bg-gray-50 border border-gray-100 p-5">
