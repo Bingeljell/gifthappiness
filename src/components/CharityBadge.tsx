@@ -13,8 +13,16 @@ export default function CharityBadge({
   const dimension = size === "lg" ? "w-16 h-16" : "w-14 h-14";
 
   if (logoUrl) {
-    // eslint-disable-next-line @next/next/no-img-element
-    return <img src={logoUrl} alt={category} className={`${dimension} rounded-full object-cover border border-gray-100 shrink-0`} />;
+    // object-contain (not cover) -- a logo's whole mark matters, unlike a
+    // photo where cropping the edges is fine. The white background + small
+    // padding avoids a hard edge/gap where a non-square or transparent-bg
+    // logo doesn't fill the circle.
+    return (
+      <div className={`${dimension} rounded-full bg-white border border-gray-100 shrink-0 p-2`}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={logoUrl} alt={category} className="w-full h-full object-contain" />
+      </div>
+    );
   }
 
   return (
