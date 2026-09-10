@@ -170,6 +170,10 @@ export type PublicContribution = {
   created_at: string;
 };
 
+export function getCelebrations(): Promise<ApiResult<{ celebrations: PublicCelebration[] }>> {
+  return apiFetch("/celebrations");
+}
+
 export function getCelebration(slug: string): Promise<ApiResult<{ celebration: PublicCelebration }>> {
   return apiFetch(`/celebrations/${encodeURIComponent(slug)}`);
 }

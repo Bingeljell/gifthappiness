@@ -1,6 +1,6 @@
 import type { Env } from "./lib/env";
 import { corsHeaders, errorResponse, json, withCors } from "./lib/response";
-import { createCelebration, getCelebration, listCelebrationContributions } from "./routes/celebrations";
+import { createCelebration, getCelebration, listCelebrationContributions, listCelebrations } from "./routes/celebrations";
 import { listCharities, getCharityBySlug } from "./routes/charities";
 import { submitContribution } from "./routes/contributions";
 import { requestVerification, confirmVerification } from "./routes/verification";
@@ -40,6 +40,11 @@ async function handleRequest(request: Request, env: Env, ctx: ExecutionContext):
   // POST /celebrations
   if (method === "POST" && segments.length === 1 && segments[0] === "celebrations") {
     return createCelebration(request, env, ctx);
+  }
+
+  // GET /celebrations
+  if (method === "GET" && segments.length === 1 && segments[0] === "celebrations") {
+    return listCelebrations(env);
   }
 
   // GET /celebrations/:slug
