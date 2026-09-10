@@ -19,9 +19,12 @@ SUPABASE_URL = "https://fsradcbnqocpvxqwizdt.supabase.co"
 # arbitrary origins are never echoed back, only ones listed here.
 ALLOWED_ORIGIN = "https://gifthappiness.org,https://www.gifthappiness.org,https://gifthappiness.pages.dev"
 
-# Public site origin used to build links inside emails. Kept separate from
+# Public site origin used to build links inside emails and to build the
+# shareable celebration link a host sends their guests. Kept separate from
 # ALLOWED_ORIGIN (a CORS control) so the two can differ in local development.
-SITE_URL = "https://gifthappiness.pages.dev"
+# Points at the custom domain as of 2026-09-10; gifthappiness.pages.dev still
+# works and stays in ALLOWED_ORIGIN, but no user-facing link should show it.
+SITE_URL = "https://gifthappiness.org"
 
 # Verified Resend sending domain. A subdomain, not the root: the root's MX
 # records belong to whichever mailbox provider receives human mail, and
