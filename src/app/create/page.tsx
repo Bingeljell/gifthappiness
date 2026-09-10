@@ -9,7 +9,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Heart,
-  ImagePlus,
   Loader2,
   Mail,
   ShieldCheck,
@@ -46,7 +45,6 @@ type FormState = {
   activeFrom: string;
   activeTill: string;
   message: string;
-  pictureName: string;
 };
 
 const initialForm: FormState = {
@@ -60,7 +58,6 @@ const initialForm: FormState = {
   activeFrom: "",
   activeTill: "",
   message: "",
-  pictureName: "",
 };
 
 type CharitiesState =
@@ -201,10 +198,6 @@ export default function CreateCelebration() {
             ))}
           </div>
 
-          <p className="text-sm text-gray-500 mb-8">
-            This form calls the live GiftHappiness API. Image upload and payment details are still pending product
-            decisions.
-          </p>
 
           {step === 0 && (
             <StepHostOccasion
@@ -470,22 +463,6 @@ function StepCauseAndPage({
         />
       </div>
 
-      <div className="space-y-2">
-        <label htmlFor="picture" className="text-sm font-bold text-gray-600 uppercase tracking-widest ml-1">
-          Picture if applicable
-        </label>
-        <label htmlFor="picture" className="flex items-center gap-3 w-full px-6 py-4 rounded-2xl bg-white border border-gray-200 text-gray-500 cursor-pointer">
-          <ImagePlus className="w-5 h-5" />
-          <span>{form.pictureName || "Upload placeholder"}</span>
-        </label>
-        <input
-          id="picture"
-          type="file"
-          accept="image/*"
-          className="sr-only"
-          onChange={(e) => update("pictureName", e.target.files?.[0]?.name ?? "")}
-        />
-      </div>
     </div>
   );
 }

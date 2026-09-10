@@ -37,7 +37,7 @@ export async function listCelebrationsAdmin(request: Request, env: Env): Promise
   const { data, error } = await supabase
     .from("celebrations")
     .select(
-      "id, slug, celebration_type, celebration_date, active_from, active_till, status, message, created_at, host:users!host_id(name, email, mobile), charity:charities!charity_id(name, slug)",
+      "id, slug, celebration_type, celebration_date, active_from, active_till, status, message, picture_url, created_at, host:users!host_id(name, email, mobile), charity:charities!charity_id(name, slug)",
     )
     .order("created_at", { ascending: false });
 
@@ -101,7 +101,7 @@ export async function updateCelebration(slug: string, request: Request, env: Env
       .update(updates)
       .eq("slug", slug)
       .select(
-        "id, slug, celebration_type, celebration_date, active_from, active_till, status, message, created_at, host:users!host_id(name, email, mobile), charity:charities!charity_id(name, slug)",
+        "id, slug, celebration_type, celebration_date, active_from, active_till, status, message, picture_url, created_at, host:users!host_id(name, email, mobile), charity:charities!charity_id(name, slug)",
       )
       .maybeSingle();
 

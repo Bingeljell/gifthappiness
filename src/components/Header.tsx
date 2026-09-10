@@ -27,6 +27,9 @@ export default function Header() {
           <Link href="/#how-it-works" className="text-sm font-semibold text-gray-600 hover:text-primary-pink transition-colors">
             How It Works
           </Link>
+          <Link href="/celebrations" className="text-sm font-semibold text-gray-600 hover:text-primary-pink transition-colors">
+            Celebrations
+          </Link>
           <Link href="/charities" className="text-sm font-semibold text-gray-600 hover:text-primary-pink transition-colors">
             Browse Charities
           </Link>

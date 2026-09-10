@@ -176,3 +176,28 @@ export async function listCelebrationContributions(slug: string, env: Env): Prom
 
   return json({ contributions: data ?? [], count: (data ?? []).length }, env);
 }
+
+
+// GET /celebrations
+// Public directory of published celebrations. Reads celebrations_public,
+// which already filters to status = 'published' and exposes only public
+// columns, so nothing here needs to re-check visibility.
+//
+// No pagination yet: the table is small and adding a cursor before it's
+// needed would be speculative. Revisit when the list is long enough to matter.
+export async function listCelebrations(env: Env): Promise<Response> {
+  const supabase = getSupabaseClient(env);
+
+  const { data, error } = await supabase
+    .from("celebrations_public")
+    .select(
+      "id, slug, celebration_type, celebration_date, active_from, active_till, message, picture_url, host_name, charity_slug, charity_name, charity_logo_url, charity_header_image_url",
+    )
+    .order("celebration_date", { ascending: true, nullsFirst: false });
+
+  if (error) {
+    return errorResponse("Could not list celebrations", env, 500);
+  }
+
+  return json({ celebrations: data ?? [] }, env);
+}
