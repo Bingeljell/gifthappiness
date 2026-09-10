@@ -2,6 +2,8 @@ import { getSupabaseClient } from "../lib/supabase";
 import { json, errorResponse } from "../lib/response";
 import { readJsonBody, requireString, requireEmail, requireMobile, optionalString, optionalDate, validateCelebrationWindow, ValidationError } from "../lib/validate";
 import { notifyHostSubmitted, notifyAdminsOfNewCelebration } from "../lib/emails";
+import { hasRecentVerification } from "./verification";
+import { getSessionUser } from "../lib/session";
 import type { Env } from "../lib/env";
 
 function slugify(text: string): string {
@@ -33,6 +35,24 @@ export async function createCelebration(request: Request, env: Env, ctx: Executi
     validateCelebrationWindow({ celebrationDate, activeFrom, activeTill });
     const message = optionalString(body.message, "message", { maxLength: 1000 });
 
+    // Proof of control over the email address, before anything is created in
+    // that address's name. Without this the verification step on /create is
+    // decorative: anyone could POST this route with someone else's address and
+    // have a celebration created and emailed to them in their name.
+    //
+    // A signed-in user creating a celebration under their own account email
+    // already proved control at sign-in, so they don't verify twice.
+    const sessionUser = await getSessionUser(request, env);
+    const alreadyProven = sessionUser?.email?.toLowerCase() === hostEmail.toLowerCase();
+
+    if (!alreadyProven && !(await hasRecentVerification(env, "email", hostEmail, "host_signup"))) {
+      return errorResponse(
+        "Please verify your email address before creating a celebration.",
+        env,
+        403,
+      );
+    }
+
     const supabase = getSupabaseClient(env);
 
     const { data: charity, error: charityError } = await supabase
@@ -60,7 +80,7 @@ export async function createCelebration(request: Request, env: Env, ctx: Executi
     if (!hostId) {
       const { data: newHost, error: hostError } = await supabase
         .from("users")
-        .insert({ name: hostName, email: hostEmail, mobile: hostMobile, address: hostAddress })
+        .insert({ name: hostName, email: hostEmail, mobile: hostMobile, address: hostAddress, email_verified: true })
         .select("id")
         .single();
 
@@ -71,7 +91,7 @@ export async function createCelebration(request: Request, env: Env, ctx: Executi
     } else {
       await supabase
         .from("users")
-        .update({ name: hostName, mobile: hostMobile, address: hostAddress })
+        .update({ name: hostName, mobile: hostMobile, address: hostAddress, email_verified: true })
         .eq("id", hostId);
     }
 

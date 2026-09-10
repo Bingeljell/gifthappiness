@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
+import { useSession } from "@/lib/session";
 import {
   AlertCircle,
   Calendar,
@@ -128,6 +129,7 @@ type PublishState =
   | { status: "error"; message: string };
 
 export default function CreateCelebration() {
+  const { user, token } = useSession();
   const [step, setStep] = useState(0);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [form, setForm] = useState<FormState>(initialForm);
@@ -151,6 +153,12 @@ export default function CreateCelebration() {
   }
 
   const update = (field: keyof FormState, value: string) => {
+    if (field === "email" && verification.status === "verified" && value !== form.email) {
+      // Verification is bound to a specific address; editing it after the fact
+      // would otherwise carry the verified state onto an unverified address.
+      setVerification({ status: "idle" });
+      setVerificationCode("");
+    }
     setForm((prev) => ({ ...prev, [field]: value }));
     // Clear this field's error as soon as it's edited, so the form stops
     // complaining the moment the host starts fixing it.
@@ -162,10 +170,24 @@ export default function CreateCelebration() {
     });
   };
 
+
+  const emailAlreadyProven =
+    !!user?.email && !!form.email && user.email.toLowerCase() === form.email.trim().toLowerCase();
+  const emailIsVerified = verification.status === "verified" || emailAlreadyProven;
+
   const goNext = () => {
     const found = validateStep(step, form);
     setErrors(found);
     if (Object.keys(found).length > 0) return;
+
+    // Verification is what proves the host controls this address. The Worker
+    // rejects an unverified create with a 403, so stopping here means the host
+    // finds out on the field itself rather than after filling in everything.
+    if (step === 0 && !emailIsVerified) {
+      setErrors({ email: "Please verify your email address to continue. Use the Verify button above." });
+      return;
+    }
+
     setStep((s) => Math.min(s + 1, steps.length - 1));
   };
   const goBack = () => {
@@ -206,6 +228,12 @@ export default function CreateCelebration() {
       }
     }
 
+    if (!emailIsVerified) {
+      setErrors({ email: "Please verify your email address before submitting." });
+      setStep(0);
+      return;
+    }
+
     const charity = charities.status === "loaded" ? charities.charities.find((c) => c.name === form.charityName) : undefined;
     if (!charity) {
       setPublish({ status: "error", message: "Choose a charity before publishing" });
@@ -223,7 +251,7 @@ export default function CreateCelebration() {
       activeFrom: form.activeFrom || undefined,
       activeTill: form.activeTill || undefined,
       message: form.message || undefined,
-    });
+    }, token ?? undefined);
     setPublish(result.ok ? { status: "success", slug: result.data.celebration.slug } : { status: "error", message: result.error });
   };
 
