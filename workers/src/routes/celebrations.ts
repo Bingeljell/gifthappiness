@@ -138,3 +138,41 @@ export async function getCelebration(slug: string, env: Env): Promise<Response> 
   }
   return json({ celebration: data }, env);
 }
+
+
+// GET /celebrations/:slug/contributions
+// Public contributor list for a celebration page. Reads contributions_public,
+// which redacts donor names per anonymous/show_name and withholds amounts
+// until a payment actually succeeded (see supabase/schema.sql).
+//
+// Deliberately mirrors getCelebration's 404 behaviour: an unpublished
+// celebration has no public contributor list either, so this resolves the
+// slug through celebrations_public rather than the base table.
+export async function listCelebrationContributions(slug: string, env: Env): Promise<Response> {
+  const supabase = getSupabaseClient(env);
+
+  const { data: celebration, error: celebrationError } = await supabase
+    .from("celebrations_public")
+    .select("id")
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (celebrationError) {
+    return errorResponse("Could not read celebration", env, 500);
+  }
+  if (!celebration) {
+    return errorResponse("Celebration not found", env, 404);
+  }
+
+  const { data, error } = await supabase
+    .from("contributions_public")
+    .select("id, donor_name, amount, payment_status, message, created_at")
+    .eq("celebration_id", celebration.id)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    return errorResponse("Could not read contributions", env, 500);
+  }
+
+  return json({ contributions: data ?? [], count: (data ?? []).length }, env);
+}

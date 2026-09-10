@@ -164,24 +164,23 @@ export function notifyAdminsOfNewCelebration(
   );
 }
 
-// 3. Celebration approved and published -> tell the host it's live.
-//
-// Ideally this links to the celebration's own public page, but that route
-// (/celebration/[slug]) doesn't exist yet -- see docs/plan.md. Until it does,
-// the button points at /account, which does list the host's celebrations.
+// 3. Celebration approved and published -> tell the host it's live, with the
+// shareable link. This is the email that matters most: the host's whole next
+// step is sending that link to their guests.
 export function notifyHostApproved(env: Env, ctx: ExecutionContext, celebration: CelebrationSummary): void {
   const content = build({
     preheader: "Your celebration is approved and live.",
     heading: "Your celebration is live",
     paragraphs: [
       `Good news${celebration.hostName ? `, ${celebration.hostName}` : ""} — your celebration has been approved and is now live.`,
-      `Guests can now contribute to ${celebration.charityName} in place of gifts.`,
+      `Guests can now contribute to ${celebration.charityName} in place of gifts. Share the link below with them — that's all that's left to do.`,
+      `Your link: ${env.SITE_URL}/celebration/${celebration.slug}`,
     ],
     details: [
       ["Celebration", titleCase(celebration.celebrationType)],
       ["Supporting", celebration.charityName],
     ],
-    button: { label: "View your celebration", url: `${env.SITE_URL}/account` },
+    button: { label: "View your celebration page", url: `${env.SITE_URL}/celebration/${celebration.slug}` },
     footerNote: "You're receiving this because you created a celebration on GiftHappiness.",
   });
 
@@ -225,57 +224,11 @@ export function notifyDonorContribution(
   });
 }
 
-// 4b. Host gets told someone contributed.
-//
-// Respects the donor's privacy choices exactly as the public view does:
-// `anonymous` hides the name entirely, `show_amount` gates the amount. A host
-// must not learn from email what the donor chose to hide on the page.
-//
-// This currently fires per contribution. That's acceptable at present volume
-// and is the ONLY way a host learns of a contribution -- there is no
-// host-facing contributions view yet (see docs/plan.md). If volume grows,
-// batch this into a digest rather than dropping it.
-export function notifyHostContribution(
-  env: Env,
-  ctx: ExecutionContext,
-  args: {
-    hostEmail: string;
-    hostName: string | null;
-    donorName: string;
-    amount: number | string;
-    anonymous: boolean;
-    showName: boolean;
-    showAmount: boolean;
-    message: string | null;
-    charityName: string;
-  },
-): void {
-  const displayName = args.anonymous || !args.showName ? "Someone" : args.donorName;
-
-  const details: Array<[string, string]> = [["From", displayName]];
-  if (args.showAmount && !args.anonymous) details.push(["Amount", formatAmount(args.amount)]);
-  details.push(["Charity", args.charityName]);
-
-  const paragraphs = [
-    `${displayName} just contributed to your celebration in support of ${args.charityName}.`,
-  ];
-  if (args.message) paragraphs.push(`They left a message: "${args.message}"`);
-
-  const content = build({
-    preheader: `${displayName} contributed to your celebration.`,
-    heading: "You have a new contribution",
-    paragraphs,
-    details,
-    button: { label: "View your celebration", url: `${env.SITE_URL}/account` },
-    footerNote: "You're receiving this because you're hosting a celebration on GiftHappiness.",
-  });
-
-  sendNotification(env, ctx, {
-    to: args.hostEmail,
-    subject: `New contribution from ${displayName}`,
-    ...content,
-  });
-}
+// (A per-contribution host email lived here until 2026-09-10. Removed by
+// product decision: it would flood a popular celebration's host, and the
+// public celebration page now lists contributors, which is the better
+// channel. If hosts later ask to be told, add a daily digest behind a cron
+// trigger rather than reinstating one email per contribution.)
 
 // 5. Celebration marked complete -> wrap-up for the host.
 export function notifyHostCompleted(

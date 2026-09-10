@@ -440,6 +440,41 @@ Admin alerts go to every user with `is_admin = true` rather than a configured ad
 - [ ] Set up the root-domain mailbox and point `EMAIL_REPLY_TO` at it.
 - [ ] Reminder mail ("your celebration ends soon") needs a cron trigger; `celebrations.active_till` already exists.
 
+## Phase 11: Public Celebration Page (2026-09-10)
+
+Closes the longest-standing gap in this file (open since 2026-08-17): a celebration could be created, approved, and published, but there was no page for guests to see it or contribute to. `/celebration` was a single static demo posting to a hardcoded `"demo"` slug. In practice **nobody could contribute to a real celebration** — the create flow, the approval flow, and the emails all led nowhere.
+
+### Routing under static export
+
+`/celebration/[slug]` reuses the exact pattern already proven by `/charities/[slug]`: celebrations are created at runtime, so no slug set exists at build time. `generateStaticParams` emits one shell at `/celebration/_shell`, `public/_redirects` rewrites `/celebration/*` to it with a 200 (rewrite, not redirect, so the browser keeps the real slug), and the client reads the slug from `window.location` and fetches it.
+
+Note `useParams()` is unusable here — every path is served from the `_shell` build, so it would always report `"_shell"`. The slug must come from `window.location`.
+
+A dev-server request to `/celebration/<slug>` returns 500 (`output: export` requires an exact param in dev). This is pre-existing behaviour, identical for `/charities/<slug>`, and does not occur in production where the rewrite applies.
+
+### The empty-contributor-list bug
+
+`contributions_public` was defined as `where payment_status = 'succeeded'`. No payment gateway exists, so every contribution is written `'pending'` and **that view returned zero rows and always would have**. A contributor list built on it would have been permanently empty.
+
+Widened to `where payment_status <> 'failed'`. The amount rule became `case when show_amount and payment_status = 'succeeded' then amount else null end`, so amounts stay hidden until money genuinely moves *and* the donor opted in — written as a condition rather than a hardcoded null so amounts appear on their own once payments land, with no second migration.
+
+### Product decisions (2026-09-10)
+
+- **Names and count, never amounts, until payments are live.** No money has changed hands, so showing an amount would imply it had. The page shows who is supporting and how many.
+- **No per-contribution email to the host.** Removed. It would flood a popular celebration's host; the page is now the host's channel. If hosts ask to be told, add a daily digest behind a cron trigger rather than reinstating one email per contribution.
+- **Reply-To is `no-reply@mail.gifthappiness.org`** until a monitored root-domain mailbox exists. A reply-to that silently bounces is worse than one that signals "don't reply here".
+- The `/celebration` demo page was deleted along with its footer and `/create` scaffolding links — it carried fabricated contributor names and posted to a `"demo"` slug that would accumulate junk rows.
+
+### Payments direction (updated 2026-09-10)
+
+Payments are a **passthrough to the charity's own mechanism**, not a gateway GiftHappiness operates — direction set ahead of the first charity meeting. The concrete mechanism depends on what that charity already uses, so `payment_status` stays a placeholder until then. Nothing in this phase assumes GiftHappiness ever holds funds.
+
+### Still open
+
+- [ ] **Host-facing contributions view.** `GET /me/contributions` filters on `donor_id` (the user's own giving); `/me/celebrations` returns no contribution data. A host now sees contributors on the public page, but has no private view with amounts.
+- [ ] `flagged` has no reason column, so rejection mail can't say why.
+- [ ] Root-domain mailbox, then point `EMAIL_REPLY_TO` at it.
+
 ## CMS And Admin Direction
 
 Superseded by Phase 6 above for auth/roles specifically; the sections below (content-management scope, non-auth admin decisions) still stand.

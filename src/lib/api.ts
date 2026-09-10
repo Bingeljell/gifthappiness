@@ -141,6 +141,45 @@ export function submitContribution(
 // session is a bearer token the caller stores (see src/lib/session.tsx) and
 // passes back as an Authorization header, not a cookie -- the frontend
 // (static export) and API are different origins.
+export type PublicCelebration = {
+  id: string;
+  slug: string;
+  celebration_type: string;
+  celebration_date: string | null;
+  active_from: string | null;
+  active_till: string | null;
+  message: string | null;
+  picture_url: string | null;
+  status: string;
+  host_name: string | null;
+  charity_slug: string;
+  charity_name: string;
+  charity_short_description: string | null;
+  charity_logo_url: string | null;
+  charity_header_image_url: string | null;
+};
+
+// amount is null unless the donor opted to show it AND payment succeeded --
+// so with no payment gateway live it is always null (see supabase/schema.sql).
+export type PublicContribution = {
+  id: string;
+  donor_name: string;
+  amount: string | number | null;
+  payment_status: "pending" | "succeeded" | "failed";
+  message: string | null;
+  created_at: string;
+};
+
+export function getCelebration(slug: string): Promise<ApiResult<{ celebration: PublicCelebration }>> {
+  return apiFetch(`/celebrations/${encodeURIComponent(slug)}`);
+}
+
+export function getCelebrationContributions(
+  slug: string,
+): Promise<ApiResult<{ contributions: PublicContribution[]; count: number }>> {
+  return apiFetch(`/celebrations/${encodeURIComponent(slug)}/contributions`);
+}
+
 export type User = { id: string; name: string | null; email: string; mobile: string | null; isAdmin: boolean };
 
 export function requestLogin(email: string): Promise<ApiResult<{ status: string; expiresInMinutes: number }>> {

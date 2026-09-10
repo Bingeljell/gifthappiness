@@ -29,10 +29,11 @@ SITE_URL = "https://gifthappiness.pages.dev"
 # collides. Also isolates transactional sending reputation from the root.
 EMAIL_DOMAIN = "mail.gifthappiness.org"
 
-# Where replies land. Every outbound email sets this as Reply-To so a human
-# reply reaches a real inbox instead of a dead noreply address. Update once
-# the root-domain mailbox exists -- until then replies bounce.
-EMAIL_REPLY_TO = "hello@gifthappiness.org"
+# Reply-To on every outbound email. Deliberately a no-reply address for now:
+# no monitored mailbox exists yet, and a reply-to that silently bounces is
+# worse than one that visibly signals "don't reply here". Swap to
+# hello@gifthappiness.org once that inbox is set up on the root domain.
+EMAIL_REPLY_TO = "no-reply@mail.gifthappiness.org"
 
 # Secrets (set via `wrangler secret put`, never committed):
 #   SUPABASE_SERVICE_ROLE_KEY - Supabase service role key, bypasses RLS; Worker-only.

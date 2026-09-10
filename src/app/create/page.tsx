@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import {
@@ -254,13 +253,6 @@ export default function CreateCelebration() {
             )}
           </div>
 
-          <p className="text-center text-xs text-gray-500 mt-6">
-            View the static donor-facing template at{" "}
-            <Link href="/celebration" className="underline font-bold text-primary-pink">
-              /celebration
-            </Link>
-            .
-          </p>
         </div>
       </div>
     </div>

@@ -6,3 +6,9 @@
 # /charities directory page) still resolve normally since Cloudflare checks
 # for a matching file before applying this rule.
 /charities/*  /charities/_shell  200
+
+# Same rewrite for dynamic celebration slugs (see the comment in
+# src/app/celebration/[slug]/page.tsx). Must come after the /charities rule
+# and must NOT match the bare /celebration path, which no longer exists as a
+# page -- /celebration/* only matches paths with a slug segment.
+/celebration/*  /celebration/_shell  200
