@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { AlertCircle, Check, Flag, Loader2, Pencil, RotateCcw, Trash2, X } from "lucide-react";
 import {
@@ -120,6 +122,51 @@ export default function AdminCelebrations({ token }: { token: string }) {
               <span className={`shrink-0 text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full ${STATUS_STYLES[c.status]}`}>
                 {c.status}
               </span>
+            </div>
+
+            {/* Review panel. An admin approving a celebration has to be able to
+                see what they're publishing -- the host's own words and any
+                image they attached -- not just the metadata above. Drafts are
+                excluded from celebrations_public, so a link to the live page
+                would 404 for exactly the celebrations most in need of review;
+                the content has to render here instead. */}
+            <div className="mt-4 pt-4 border-t border-gray-100">
+              <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Message from the host</p>
+              {c.message ? (
+                <p className="text-sm text-gray-700 font-medium leading-relaxed whitespace-pre-wrap rounded-xl bg-gray-50 border border-gray-100 p-4">
+                  {c.message}
+                </p>
+              ) : (
+                <p className="text-sm text-gray-400 italic">No message provided.</p>
+              )}
+
+              <p className="text-xs font-black text-gray-500 uppercase tracking-widest mt-4 mb-2">Attached picture</p>
+              {c.picture_url ? (
+                <div className="rounded-xl border border-gray-200 overflow-hidden bg-gray-50 inline-block">
+                  <Image
+                    src={c.picture_url}
+                    alt="Picture attached to this celebration"
+                    width={320}
+                    height={200}
+                    className="object-contain max-h-56 w-auto"
+                    unoptimized
+                  />
+                </div>
+              ) : (
+                <p className="text-sm text-gray-400 italic">No picture attached.</p>
+              )}
+
+              <p className="text-xs text-gray-400 mt-4">
+                Slug: <code>{c.slug}</code>
+                {c.status === "published" && (
+                  <>
+                    {" · "}
+                    <Link href={`/celebration/${c.slug}`} className="underline font-bold text-primary-pink">
+                      Open live page
+                    </Link>
+                  </>
+                )}
+              </p>
             </div>
 
             <div className="mt-4 pt-4 border-t border-gray-100 flex flex-wrap items-center gap-3">

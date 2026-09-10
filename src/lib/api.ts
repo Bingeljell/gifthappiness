@@ -426,6 +426,9 @@ export type AdminCelebration = {
   active_till: string | null;
   status: CelebrationStatus;
   message: string | null;
+  // Null until host picture upload exists. Rendered in the admin preview so a
+  // human sees any image before the celebration can be published.
+  picture_url: string | null;
   created_at: string;
   host: { name: string | null; email: string; mobile: string | null } | null;
   charity: { name: string; slug: string } | null;
