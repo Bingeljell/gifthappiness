@@ -473,7 +473,19 @@ Payments are a **passthrough to the charity's own mechanism**, not a gateway Gif
 
 - [ ] **Host-facing contributions view.** `GET /me/contributions` filters on `donor_id` (the user's own giving); `/me/celebrations` returns no contribution data. A host now sees contributors on the public page, but has no private view with amounts.
 - [ ] `flagged` has no reason column, so rejection mail can't say why.
-- [ ] Root-domain mailbox, then point `EMAIL_REPLY_TO` at it.
+- [ ] Root-domain mailbox, then point `EMAIL_REPLY_TO` at it. Cloudflare Email Routing (free) covers this once DNS is on Cloudflare.
+- [ ] Publish Resend's SPF and MX records. As of 2026-09-10 only DKIM (`resend._domainkey.mail`) is published -- Resend verified the domain on DKIM alone, so `send.mail` MX (`feedback-smtp.ap-northeast-1.amazonses.com`) and `send.mail` TXT (`v=spf1 include:amazonses.com ~all`) are still missing. Without them there's no SPF alignment signal and no bounce return-path, so mail to a dead address fails invisibly.
+- [ ] Replace the inherited GoDaddy DMARC record (`p=quarantine`, `rua` pointing at `onsecureserver.net`, i.e. reports go to GoDaddy, not us) with our own at `p=none` first.
+
+## Phase 12: Multi-Origin CORS (2026-09-10)
+
+`ALLOWED_ORIGIN` was a single value, so moving the site to `gifthappiness.org` had no safe ordering: switching it broke `pages.dev` instantly, and not switching it left the new domain CORS-blocked. Now a comma-separated list, resolved per request.
+
+`Access-Control-Allow-Origin` cannot be a wildcard when it must match an exact origin, so the Worker echoes back the caller's origin **only when it appears in the list** -- an unrecognised origin gets the first configured origin instead, never its own, so a hostile site is still blocked by the browser. `Vary: Origin` is set since the header now varies per request.
+
+Route handlers build responses through `json()`/`errorResponse()`, which never receive the `Request` and so can only emit a default origin. Rather than thread the `Request` through every call site, `src/index.ts` routes through `handleRequest()` and corrects the header once in `withCors()` on the way out.
+
+Closes the Phase 5 gap where Pages preview deployments were CORS-blocked: a preview origin can now just be added to the list.
 
 ## CMS And Admin Direction
 
