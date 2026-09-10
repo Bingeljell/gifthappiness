@@ -125,7 +125,12 @@ create table if not exists contributions (
   -- history; donor_name/donor_mobile/donor_email below are filled either way.
   donor_id uuid references users (id) on delete set null,
   donor_name text not null,
-  donor_mobile text not null,
+  -- Mobile optional, email required (2026-09-10): email is the channel used to
+  -- send the donor their confirmation and payment instructions, so it's the
+  -- one we actually need; mobile is a redundant second channel and every
+  -- required field on the contribution form costs donations. Enforced in
+  -- workers/src/routes/contributions.ts -- the column stays nullable here.
+  donor_mobile text,
   donor_email text,
   pan text,
   amount numeric(12, 2) not null check (amount > 0),

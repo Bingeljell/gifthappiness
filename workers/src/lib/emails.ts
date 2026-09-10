@@ -175,6 +175,10 @@ export function notifyHostApproved(env: Env, ctx: ExecutionContext, celebration:
       `Good news${celebration.hostName ? `, ${celebration.hostName}` : ""} — your celebration has been approved and is now live.`,
       `Guests can now contribute to ${celebration.charityName} in place of gifts. Share the link below with them — that's all that's left to do.`,
       `Your link: ${env.SITE_URL}/celebration/${celebration.slug}`,
+      // Linked rather than embedded: Gmail and most clients strip data: URIs
+      // in <img>, so an inline QR would render as a broken image for most
+      // recipients. The dashboard shows it and offers a print-quality PNG.
+      `Prefer a QR code for invitations? You'll find one to download on your account page: ${env.SITE_URL}/account`,
     ],
     details: [
       ["Celebration", titleCase(celebration.celebrationType)],

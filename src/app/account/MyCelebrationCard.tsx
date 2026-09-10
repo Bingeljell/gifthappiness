@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { AlertCircle, Check, Copy, ExternalLink, Loader2, Pencil } from "lucide-react";
+import { AlertCircle, Check, Copy, Download, ExternalLink, Loader2, Pencil, QrCode } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { updateMyCelebration, type MyCelebration, type UpdateMyCelebrationInput } from "@/lib/api";
 
 // Human wording for the raw status column. A host should never be shown
@@ -14,6 +15,45 @@ const STATUS_LABEL: Record<string, { label: string; className: string }> = {
   expired: { label: "Complete", className: "bg-gray-100 text-gray-600" },
   flagged: { label: "Needs attention", className: "bg-red-100 text-red-800" },
 };
+
+
+// Converts the on-screen QR SVG into a PNG download. Client-side on purpose:
+// the QR encodes only a URL we already know, so there is nothing worth
+// generating or storing server-side, and a hosted file would need a bucket
+// plus cleanup when a celebration is deleted.
+function downloadQr(celebrationId: string, slug: string) {
+  const container = document.getElementById(`qr-${celebrationId}`);
+  const svg = container?.querySelector("svg");
+  if (!svg) return;
+
+  // Serialise, then draw at 4x so the PNG is usable in print.
+  const scale = 4;
+  const size = (svg.viewBox.baseVal.width || 160) * scale;
+  const source = new XMLSerializer().serializeToString(svg);
+  const blob = new Blob([source], { type: "image/svg+xml;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+
+  const image = new window.Image();
+  image.onload = () => {
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const context = canvas.getContext("2d");
+    if (context) {
+      // White background: a transparent PNG scans badly on dark paper.
+      context.fillStyle = "#ffffff";
+      context.fillRect(0, 0, size, size);
+      context.drawImage(image, 0, 0, size, size);
+    }
+    URL.revokeObjectURL(url);
+
+    const link = document.createElement("a");
+    link.download = `gifthappiness-${slug}.png`;
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  };
+  image.src = url;
+}
 
 type SaveState = { status: "idle" } | { status: "saving" } | { status: "error"; message: string };
 
@@ -29,6 +69,7 @@ export default function MyCelebrationCard({
   const [editing, setEditing] = useState(false);
   const [save, setSave] = useState<SaveState>({ status: "idle" });
   const [copied, setCopied] = useState(false);
+  const [showQr, setShowQr] = useState(false);
   const [form, setForm] = useState({
     celebrationType: celebration.celebration_type,
     celebrationDate: celebration.celebration_date ?? "",
@@ -125,7 +166,34 @@ export default function MyCelebrationCard({
               <ExternalLink className="w-3.5 h-3.5" />
               Open
             </Link>
+            <button
+              type="button"
+              onClick={() => setShowQr((v) => !v)}
+              className="shrink-0 inline-flex items-center gap-1 text-xs font-bold text-primary-pink hover:underline"
+            >
+              <QrCode className="w-3.5 h-3.5" />
+              {showQr ? "Hide QR" : "QR code"}
+            </button>
           </div>
+
+          {showQr && (
+            <div className="mt-4 pt-4 border-t border-gray-200 flex flex-col items-center text-center">
+              <div id={`qr-${celebration.id}`} className="p-3 bg-white rounded-2xl border border-gray-200">
+                <QRCodeSVG value={shareUrl} size={160} />
+              </div>
+              <p className="text-xs text-gray-500 mt-3 max-w-xs leading-relaxed">
+                Print this or add it to an invitation &mdash; guests can scan it to open your celebration page.
+              </p>
+              <button
+                type="button"
+                onClick={() => downloadQr(celebration.id, celebration.slug)}
+                className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-primary-pink hover:underline"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Download PNG
+              </button>
+            </div>
+          )}
         </div>
       )}
 

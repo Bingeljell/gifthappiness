@@ -318,7 +318,11 @@ export default function CreateCelebration() {
           {step === 1 && <StepCauseAndPage form={form} update={update} charities={charities} errors={errors} />}
           {step === 2 && <StepPreviewAndPublish form={form} publish={publish} charities={charities} />}
 
-          <div className="flex items-center justify-between mt-10 pt-8 border-t border-gray-100">
+          <p className="text-xs text-gray-400 mt-8">
+            <span className="text-primary-pink">*</span> Required
+          </p>
+
+          <div className="flex items-center justify-between mt-6 pt-8 border-t border-gray-100">
             <button
               type="button"
               onClick={goBack}
@@ -386,6 +390,7 @@ function StepHostOccasion({
           value={form.hostName}
           onChange={(v) => update("hostName", v)}
           error={errors.hostName}
+          required
         />
         <Field
           id="mobile"
@@ -395,12 +400,14 @@ function StepHostOccasion({
           value={form.mobile}
           onChange={(v) => update("mobile", v)}
           error={errors.mobile}
+          required
         />
       </div>
 
       <div className="space-y-2">
         <label htmlFor="address" className="text-sm font-bold text-gray-600 uppercase tracking-widest ml-1">
           Address
+          <span className="text-gray-400 font-medium normal-case tracking-normal ml-2">optional</span>
         </label>
         <textarea
           id="address"
@@ -424,6 +431,7 @@ function StepHostOccasion({
             onChange={(v) => update("email", v)}
             disabled={verification.status === "verified"}
             error={errors.email}
+            required
           />
           <button
             type="button"
@@ -488,6 +496,7 @@ function StepHostOccasion({
         <div className="space-y-2">
           <label htmlFor="celebration" className="text-sm font-bold text-gray-600 uppercase tracking-widest ml-1">
             Celebration
+            <span className="text-primary-pink ml-1" aria-hidden="true">*</span>
           </label>
           <select
             id="celebration"
@@ -506,6 +515,7 @@ function StepHostOccasion({
           type="date"
           value={form.celebrationDate}
           onChange={(v) => update("celebrationDate", v)}
+          error={errors.celebrationDate}
         />
       </div>
     </div>
@@ -528,6 +538,7 @@ function StepCauseAndPage({
       <div className="space-y-2">
         <label htmlFor="charity" className="text-sm font-bold text-gray-600 uppercase tracking-widest ml-1">
           Charity selected
+          <span className="text-primary-pink ml-1" aria-hidden="true">*</span>
         </label>
         {charities.status === "loading" && (
           <div className="flex items-center gap-2 text-gray-500 px-1 py-2">
@@ -579,6 +590,7 @@ function StepCauseAndPage({
       <div className="space-y-2">
         <label htmlFor="message" className="text-sm font-bold text-gray-600 uppercase tracking-widest ml-1">
           Personal message for friends/family
+          <span className="text-gray-400 font-medium normal-case tracking-normal ml-2">optional</span>
         </label>
         <textarea
           id="message"
@@ -717,6 +729,7 @@ function Field({
   onChange,
   disabled = false,
   error,
+  required = false,
 }: {
   id: string;
   label: string;
@@ -727,11 +740,17 @@ function Field({
   onChange: (value: string) => void;
   disabled?: boolean;
   error?: string;
+  required?: boolean;
 }) {
   return (
     <div className="space-y-2">
       <label htmlFor={id} className="text-sm font-bold text-gray-600 uppercase tracking-widest ml-1">
         {label}
+        {required ? (
+          <span className="text-primary-pink ml-1" aria-hidden="true">*</span>
+        ) : (
+          <span className="text-gray-400 font-medium normal-case tracking-normal ml-2">optional</span>
+        )}
       </label>
       <input
         type={type}
