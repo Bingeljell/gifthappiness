@@ -2,6 +2,8 @@ export interface Env {
   SUPABASE_URL: string;
   SUPABASE_SERVICE_ROLE_KEY: string;
   ADMIN_API_KEY: string;
+  // Comma-separated list of permitted browser origins; a single value is
+  // still valid. See workers/src/lib/response.ts for why a list is needed.
   ALLOWED_ORIGIN: string;
   RESEND_API_KEY: string;
   // Verified Resend sending domain, e.g. "mail.gifthappiness.org". A

@@ -12,12 +12,12 @@ compatibility_date = "2025-01-01"
 
 [vars]
 SUPABASE_URL = "https://fsradcbnqocpvxqwizdt.supabase.co"
-# CORS is single-origin only (see workers/src/lib/response.ts corsHeaders) --
-# this only allows the Production Pages URL. Cloudflare Pages Preview
-# deployments (random <hash>.gifthappiness.pages.dev subdomains) will be
-# CORS-blocked until corsHeaders supports multiple/wildcard origins; local
-# dev also needs a manual switch back to http://localhost:3000 for now.
-ALLOWED_ORIGIN = "https://gifthappiness.pages.dev"
+# Comma-separated list of permitted browser origins (see
+# workers/src/lib/response.ts). Listing both the Pages URL and the custom
+# domain makes the domain cutover zero-downtime -- neither breaks while DNS
+# propagates. Add a preview or localhost origin here when one is needed;
+# arbitrary origins are never echoed back, only ones listed here.
+ALLOWED_ORIGIN = "https://gifthappiness.org,https://www.gifthappiness.org,https://gifthappiness.pages.dev"
 
 # Public site origin used to build links inside emails. Kept separate from
 # ALLOWED_ORIGIN (a CORS control) so the two can differ in local development.
