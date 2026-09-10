@@ -556,7 +556,7 @@ Options:
 
 Recommended next step:
 
-- [ ] Use a custom domain on Cloudflare Pages first.
+- [x] Use a custom domain on Cloudflare Pages first. Done 2026-09-10: `gifthappiness.org` and `www` both CNAME to `gifthappiness.pages.dev`, proxied, Cloudflare Universal SSL. Nameservers moved GoDaddy -> Cloudflare; all Resend records (DKIM `resend._domainkey.mail`, `send.mail` MX and SPF) carried across and resolve. `SITE_URL` now points at the custom domain.
 - [ ] If staying on GoDaddy temporarily, update DNS records there to point to Cloudflare.
 - [ ] Later decide whether to transfer the registrar to Cloudflare or Namecheap.
 - [ ] Finalize production domain before SEO canonical URLs are implemented.
