@@ -48,6 +48,49 @@ const initialDonorForm: DonorForm = {
   anonymous: false,
 };
 
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Mirrors canonicalizeMobile in workers/src/lib/validate.ts: Indian numbers
+// are 10 digits starting 6-9, with an optional +91/91/0 prefix; anything with
+// another country code is accepted as international.
+function isValidMobile(raw: string): boolean {
+  const cleaned = raw.replace(/[\s\-().]/g, "");
+  if (cleaned.startsWith("+") && !cleaned.startsWith("+91")) {
+    return /^\+[1-9]\d{7,14}$/.test(cleaned);
+  }
+  const digits = cleaned.replace(/^\+/, "");
+  let local: string;
+  if (digits.length === 10) local = digits;
+  else if (digits.length === 12 && digits.startsWith("91")) local = digits.slice(2);
+  else if (digits.length === 11 && digits.startsWith("0")) local = digits.slice(1);
+  else return false;
+  return /^[6-9]\d{9}$/.test(local);
+}
+
+type DonorErrors = Partial<Record<"name" | "email" | "mobile" | "amount" | "message", string>>;
+
+function validateDonor(donor: DonorForm): DonorErrors {
+  const errors: DonorErrors = {};
+  if (!donor.name.trim()) errors.name = "Please enter your name.";
+
+  // Email required, mobile optional: email is how the confirmation and payment
+  // instructions reach the donor.
+  if (!donor.email.trim()) errors.email = "We need your email to send your confirmation.";
+  else if (!EMAIL_PATTERN.test(donor.email.trim())) errors.email = "That doesn't look like a valid email address.";
+
+  if (donor.mobile.trim() && !isValidMobile(donor.mobile)) {
+    errors.mobile = "Enter a valid mobile number, or leave this blank.";
+  }
+
+  const amount = Number(donor.amount);
+  if (!donor.amount.trim()) errors.amount = "Enter the amount you'd like to give.";
+  else if (!Number.isFinite(amount) || amount <= 0) errors.amount = "Enter an amount greater than zero.";
+
+  if (donor.message.length > 1000) errors.message = "Please keep your message under 1000 characters.";
+  return errors;
+}
+
 type SubmitState =
   | { status: "idle" }
   | { status: "submitting" }
@@ -85,6 +128,7 @@ export default function CelebrationDetailClient() {
   const [contributions, setContributions] = useState<PublicContribution[]>([]);
   const [donor, setDonor] = useState<DonorForm>(initialDonorForm);
   const [submit, setSubmit] = useState<SubmitState>({ status: "idle" });
+  const [donorErrors, setDonorErrors] = useState<DonorErrors>({});
   const [prefilledFor, setPrefilledFor] = useState<string | null>(null);
 
   // Pre-fill from the signed-in account without clobbering in-progress edits.
@@ -139,6 +183,12 @@ export default function CelebrationDetailClient() {
 
   const updateDonor = <K extends keyof DonorForm>(field: K, value: DonorForm[K]) => {
     setDonor((prev) => ({ ...prev, [field]: value }));
+    setDonorErrors((prev) => {
+      if (!(field in prev)) return prev;
+      const next = { ...prev };
+      delete next[field as keyof DonorErrors];
+      return next;
+    });
   };
 
   const handleSubmit = async (event: FormEvent) => {
@@ -146,19 +196,21 @@ export default function CelebrationDetailClient() {
     if (load.status !== "ready") return;
     const slug = load.celebration.slug;
 
-    const amount = Number(donor.amount);
-    if (!donor.name || !donor.mobile || !Number.isFinite(amount) || amount <= 0) {
-      setSubmit({ status: "error", message: "Name, mobile number, and a positive amount are required." });
+    const found = validateDonor(donor);
+    setDonorErrors(found);
+    if (Object.keys(found).length > 0) {
+      setSubmit({ status: "idle" });
       return;
     }
+    const amount = Number(donor.amount);
 
     setSubmit({ status: "submitting" });
     const result = await submitContribution(
       slug,
       {
         donorName: donor.name,
-        donorMobile: donor.mobile,
-        donorEmail: donor.email || undefined,
+        donorMobile: donor.mobile || undefined,
+        donorEmail: donor.email,
         pan: donor.pan || undefined,
         amount,
         message: donor.message || undefined,
@@ -172,6 +224,7 @@ export default function CelebrationDetailClient() {
     if (result.ok) {
       setSubmit({ status: "success" });
       setDonor(initialDonorForm);
+      setDonorErrors({});
       // Refresh so the contributor sees themselves appear immediately.
       loadContributions(slug);
     } else {
@@ -308,11 +361,11 @@ export default function CelebrationDetailClient() {
               </p>
 
               <form className="space-y-5" onSubmit={handleSubmit}>
-                <Field id="donor-name" label="Name of donor" placeholder="Your name" value={donor.name} onChange={(v) => updateDonor("name", v)} />
-                <Field id="donor-mobile" label="Mobile number" placeholder="+91 98765 43210" inputMode="tel" value={donor.mobile} onChange={(v) => updateDonor("mobile", v)} />
-                <Field id="donor-email" label="Email (optional, for confirmation)" placeholder="you@example.com" inputMode="email" value={donor.email} onChange={(v) => updateDonor("email", v)} />
+                <Field id="donor-name" label="Name of donor" placeholder="Your name" value={donor.name} onChange={(v) => updateDonor("name", v)} error={donorErrors.name} required />
+                <Field id="donor-mobile" label="Mobile number" placeholder="+91 98765 43210" inputMode="tel" value={donor.mobile} onChange={(v) => updateDonor("mobile", v)} error={donorErrors.mobile} />
+                <Field id="donor-email" label="Email" placeholder="you@example.com" inputMode="email" value={donor.email} onChange={(v) => updateDonor("email", v)} error={donorErrors.email} required />
                 <Field id="pan" label="PAN number if required" placeholder="Required above eligible limits" value={donor.pan} onChange={(v) => updateDonor("pan", v)} />
-                <Field id="amount" label="Contribution amount" placeholder="e.g. 5000" inputMode="numeric" value={donor.amount} onChange={(v) => updateDonor("amount", v)} />
+                <Field id="amount" label="Contribution amount" placeholder="e.g. 5000" inputMode="numeric" value={donor.amount} onChange={(v) => updateDonor("amount", v)} error={donorErrors.amount} required />
                 <Field id="donor-message" label="Message (optional)" placeholder={`A note for ${hostName}`} value={donor.message} onChange={(v) => updateDonor("message", v)} />
 
                 <fieldset className="rounded-3xl bg-gray-50 border border-gray-100 p-5 space-y-4">
@@ -433,6 +486,8 @@ function Field({
   inputMode,
   value,
   onChange,
+  error,
+  required = false,
 }: {
   id: string;
   label: string;
@@ -440,11 +495,18 @@ function Field({
   inputMode?: "text" | "tel" | "url" | "email" | "numeric" | "decimal" | "search";
   value: string;
   onChange: (value: string) => void;
+  error?: string;
+  required?: boolean;
 }) {
   return (
     <div className="space-y-2">
       <label htmlFor={id} className="text-sm font-bold text-primary-pink/60 uppercase tracking-widest ml-1">
         {label}
+        {required ? (
+          <span className="text-primary-pink ml-1" aria-hidden="true">*</span>
+        ) : (
+          <span className="text-gray-400 font-medium normal-case tracking-normal ml-2">optional</span>
+        )}
       </label>
       <input
         id={id}
@@ -452,8 +514,20 @@ function Field({
         inputMode={inputMode}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full px-5 py-4 rounded-2xl bg-white border border-primary-pink/10 focus:border-primary-pink/30 focus:ring-4 focus:ring-primary-pink/5 outline-none transition-all text-primary-pink placeholder:text-primary-pink/30"
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? `${id}-error` : undefined}
+        className={`w-full px-5 py-4 rounded-2xl bg-white border outline-none transition-all text-primary-pink placeholder:text-primary-pink/30 ${
+          error
+            ? "border-primary-pink focus:border-primary-pink focus:ring-4 focus:ring-primary-pink/10"
+            : "border-primary-pink/10 focus:border-primary-pink/30 focus:ring-4 focus:ring-primary-pink/5"
+        }`}
       />
+      {error && (
+        <p id={`${id}-error`} className="flex items-start gap-1.5 text-sm font-semibold text-primary-pink ml-1">
+          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+          {error}
+        </p>
+      )}
     </div>
   );
 }

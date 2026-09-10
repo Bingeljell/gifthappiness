@@ -118,8 +118,11 @@ export function createCelebration(
 
 export type SubmitContributionInput = {
   donorName: string;
-  donorMobile: string;
-  donorEmail?: string;
+  // Email required, mobile optional (2026-09-10): email is how the donor gets
+  // their confirmation and payment instructions, so it's the contact we
+  // actually need. See workers/src/routes/contributions.ts.
+  donorEmail: string;
+  donorMobile?: string;
   pan?: string;
   amount: number;
   message?: string;

@@ -29,14 +29,56 @@ export function requireEmail(value: unknown, field = "email"): string {
   return email.toLowerCase();
 }
 
-const MOBILE_PATTERN = /^\+?[0-9]{10,15}$/;
+// The previous pattern (/^\+?[0-9]{10,15}$/) accepted "0000000000" and
+// "1234567890" -- i.e. it caught almost no junk. Indian mobile numbers are
+// exactly 10 digits and always start 6-9, which rejects both of those on its
+// own. Overseas guests are still supported via explicit +<country code>, so a
+// diaspora donor isn't blocked.
+//
+// Format validation only stops typos and lazy junk; it cannot prove the number
+// belongs to the person entering it. Only an OTP does that -- `verifications`
+// already accepts channel 'mobile' for when an SMS provider is wired up.
+//
+// Returns a canonical +91XXXXXXXXXX (or +<cc>...) so the same number entered
+// as "98765 43210", "098765 43210" or "+91-98765-43210" stores identically.
+function canonicalizeMobile(raw: string, field: string): string {
+  const cleaned = raw.replace(/[\s\-().]/g, "");
+
+  // Explicit non-Indian country code: accept a reasonable E.164 range.
+  if (cleaned.startsWith("+") && !cleaned.startsWith("+91")) {
+    if (!/^\+[1-9]\d{7,14}$/.test(cleaned)) {
+      throw new ValidationError(`${field} must be a valid phone number, including the country code`);
+    }
+    return cleaned;
+  }
+
+  const digits = cleaned.replace(/^\+/, "");
+
+  // Length-based prefix handling, not a regex strip: "9198765432" is a valid
+  // 10-digit number beginning 91, and blindly removing a leading "91" would
+  // mangle it into 8 digits.
+  let local: string;
+  if (digits.length === 10) local = digits;
+  else if (digits.length === 12 && digits.startsWith("91")) local = digits.slice(2);
+  else if (digits.length === 11 && digits.startsWith("0")) local = digits.slice(1);
+  else {
+    throw new ValidationError(`${field} must be a 10-digit Indian mobile number, or include a country code`);
+  }
+
+  if (!/^[6-9]\d{9}$/.test(local)) {
+    throw new ValidationError(`${field} must be a valid Indian mobile number starting with 6, 7, 8 or 9`);
+  }
+  return `+91${local}`;
+}
 
 export function requireMobile(value: unknown, field = "mobile"): string {
   const mobile = requireString(value, field, { maxLength: 20 });
-  if (!MOBILE_PATTERN.test(mobile.replace(/\s/g, ""))) {
-    throw new ValidationError(`${field} must be a valid phone number`);
-  }
-  return mobile;
+  return canonicalizeMobile(mobile, field);
+}
+
+export function optionalMobile(value: unknown, field = "mobile"): string | undefined {
+  if (value === undefined || value === null || value === "") return undefined;
+  return requireMobile(value, field);
 }
 
 export function requirePositiveAmount(value: unknown, field = "amount"): number {

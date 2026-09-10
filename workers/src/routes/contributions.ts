@@ -3,9 +3,10 @@ import { json, errorResponse } from "../lib/response";
 import {
   readJsonBody,
   requireString,
-  requireMobile,
+  optionalMobile,
   requirePositiveAmount,
   optionalString,
+  requireEmail,
   optionalBoolean,
   ValidationError,
 } from "../lib/validate";
@@ -23,8 +24,14 @@ export async function submitContribution(slug: string, request: Request, env: En
     const body = await readJsonBody(request);
 
     const donorName = requireString(body.donorName, "donorName");
-    const donorMobile = requireMobile(body.donorMobile, "donorMobile");
-    const donorEmail = optionalString(body.donorEmail, "donorEmail");
+    // Email required, mobile optional -- the reverse of how this started.
+    // Email is the channel this platform actually uses: the donor gets their
+    // confirmation and (once payments exist) their payment instructions by
+    // email, so a contribution without one leaves us unable to tell the donor
+    // how to complete it. Mobile is a second contact channel for someone we
+    // can already reach, and every required field here costs contributions.
+    const donorEmail = requireEmail(body.donorEmail, "donorEmail");
+    const donorMobile = optionalMobile(body.donorMobile, "donorMobile");
     const pan = optionalString(body.pan, "pan", { maxLength: 20 });
     const amount = requirePositiveAmount(body.amount);
     const message = optionalString(body.message, "message", { maxLength: 1000 });
@@ -58,7 +65,7 @@ export async function submitContribution(slug: string, request: Request, env: En
         celebration_id: celebration.id,
         donor_id: donor?.id ?? null,
         donor_name: donorName,
-        donor_mobile: donorMobile,
+        donor_mobile: donorMobile ?? null,
         donor_email: donorEmail,
         pan,
         amount,
@@ -87,16 +94,13 @@ export async function submitContribution(slug: string, request: Request, env: En
     const charityName = charity?.name ?? "the charity";
     const celebrationType = (celebration.celebration_type as string) ?? "celebration";
 
-    // donorEmail is optional on this form, so there may be nobody to confirm to.
-    if (donorEmail) {
-      notifyDonorContribution(env, ctx, {
-        donorEmail,
-        donorName,
-        amount,
-        charityName,
-        celebrationType,
-      });
-    }
+    notifyDonorContribution(env, ctx, {
+      donorEmail,
+      donorName,
+      amount,
+      charityName,
+      celebrationType,
+    });
 
     return json({ contribution }, env, 201);
   } catch (err) {
