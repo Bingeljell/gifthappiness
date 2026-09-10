@@ -7,8 +7,8 @@ Last updated 2026-09-10.
 still outstanding" view. When an item is done, delete it here and record it in
 `docs/changelog.md`.
 
-**Note:** test celebrations on `/celebrations` are deliberate — they're how the people
-running the site see the real flow end to end. Don't delete them as cleanup.
+**Note:** items here are tracked even when the current state is intentional — an item
+staying on the list is how we remember it's still outstanding.
 
 ---
 
@@ -46,6 +46,17 @@ v=DMARC1; p=none; rua=mailto:<a real inbox>
 ```
 
 Tighten to `quarantine` after a few weeks of clean reports.
+
+---
+
+### Test celebrations are publicly listed
+Celebrations with placeholder messages (e.g. *"This is a test page. Will be deleted"*) appear
+on `/celebrations`.
+
+**Deliberate for now** — they're how the people running the site see the real flow end to end,
+so don't delete them as cleanup. Still tracked here because they should come off before any
+real public launch, and because a charity or early visitor browsing `/celebrations` will see
+them.
 
 ---
 
