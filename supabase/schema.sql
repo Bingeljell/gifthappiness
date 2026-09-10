@@ -252,9 +252,11 @@ select
   celebration_id,
   case when anonymous or not show_name then 'Anonymous contributor' else donor_name end as donor_name,
   case when show_amount and payment_status = 'succeeded' then amount else null end as amount,
-  payment_status,
   message,
-  created_at
+  created_at,
+  -- Appended last deliberately: CREATE OR REPLACE VIEW can only add columns
+  -- at the end of the list, never insert one mid-list (error 42P16).
+  payment_status
 from contributions
 where payment_status <> 'failed';
 
