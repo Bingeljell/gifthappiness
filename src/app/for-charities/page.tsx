@@ -41,8 +41,7 @@ export default function ForCharitiesPage() {
           </div>
 
           <div className="rounded-2xl bg-gray-50 border border-gray-100 p-6 text-sm text-gray-500 leading-relaxed mb-10">
-            The full vetting checklist and partnership agreement are still being finalized with legal and accounting
-            review. See the{" "}
+            Every charity we list is independently vetted before it appears. See the{" "}
             <Link href="/charity-selection-policy" className="underline font-bold text-primary-pink">
               Charity Selection Policy
             </Link>{" "}
@@ -50,7 +49,11 @@ export default function ForCharitiesPage() {
           </div>
 
           <p className="text-gray-600 font-medium">
-            A dedicated intake process has not launched yet. Once it does, this page will link to it directly.
+            If your organisation would like to be considered, write to us at{" "}
+            <a href="mailto:hello@gifthappiness.org" className="underline font-bold text-primary-pink">
+              hello@gifthappiness.org
+            </a>{" "}
+            and we&apos;ll take you through what we need.
           </p>
         </div>
       </section>

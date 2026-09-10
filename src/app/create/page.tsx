@@ -501,7 +501,15 @@ function StepPreviewAndPublish({
 }) {
   const charity = charities.status === "loaded" ? charities.charities.find((c) => c.name === form.charityName) : undefined;
   const displayName = form.hostName || "Your name";
-  const demoUrl = "https://gifthappiness.example/celebration/demo";
+  // The real, shareable link only exists once the celebration has been
+  // submitted and has a slug. Rendering it solely in the success branch also
+  // keeps window.location out of the prerendered output (this page is part of
+  // a static export), so there's no hydration mismatch between the build's
+  // origin and the visitor's.
+  const celebrationUrl =
+    publish.status === "success"
+      ? `${typeof window === "undefined" ? "https://gifthappiness.org" : window.location.origin}/celebration/${publish.slug}`
+      : null;
 
   return (
     <div className="space-y-6">
@@ -509,7 +517,7 @@ function StepPreviewAndPublish({
         <div className="flex items-start gap-3 rounded-2xl bg-green-50 border border-green-200 p-5 text-green-800">
           <Check className="w-5 h-5 shrink-0 mt-0.5" />
           <p className="text-sm font-semibold">
-            Submitted as <code>{publish.slug}</code>. A GiftHappiness admin needs to review and approve it before the page goes live.
+            Submitted. We review every celebration before it goes live &mdash; we&apos;ll email you as soon as yours is approved.
           </p>
         </div>
       )}
@@ -552,13 +560,21 @@ function StepPreviewAndPublish({
         <div className="rounded-[32px] bg-white border border-gray-100 p-6 flex flex-col items-center text-center">
           <ShieldCheck className="w-6 h-6 text-primary-pink mb-3" />
           <h3 className="font-black text-gray-900 mb-2">Share via QR</h3>
-          <p className="text-xs text-gray-500 mb-5 leading-relaxed">
-            Demo QR only &mdash; publishing and a real per-celebration link are not live yet.
-          </p>
-          <div className="p-3 bg-white border border-gray-100 rounded-2xl">
-            <QRCodeSVG value={demoUrl} size={140} />
-          </div>
-          <p className="text-[11px] text-gray-400 mt-4 break-all">{demoUrl}</p>
+          {celebrationUrl ? (
+            <>
+              <p className="text-xs text-gray-500 mb-5 leading-relaxed">
+                Once your celebration is approved, guests can scan this to open your page.
+              </p>
+              <div className="p-3 bg-white border border-gray-100 rounded-2xl">
+                <QRCodeSVG value={celebrationUrl} size={140} />
+              </div>
+              <p className="text-[11px] text-gray-400 mt-4 break-all">{celebrationUrl}</p>
+            </>
+          ) : (
+            <p className="text-xs text-gray-500 leading-relaxed">
+              Submit your celebration and we&apos;ll generate a QR code and a shareable link for your guests.
+            </p>
+          )}
         </div>
       </div>
     </div>

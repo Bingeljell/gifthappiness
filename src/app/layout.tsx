@@ -30,7 +30,7 @@ const playfairBrand = Playfair_Display({
 
 export const metadata: Metadata = {
   title: "Gift Happiness - Celebrate with Purpose",
-  description: "Turn every celebration into a gift that changes lives. Create a static celebration page preview for charity-first giving.",
+  description: "Turn every celebration into a gift that changes lives. Create a celebration page and invite guests to support a vetted charity instead of giving gifts.",
 };
 
 export default function RootLayout({

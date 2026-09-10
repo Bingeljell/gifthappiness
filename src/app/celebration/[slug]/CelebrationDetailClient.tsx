@@ -303,8 +303,8 @@ export default function CelebrationDetailClient() {
               </div>
               <h2 className="text-3xl font-black text-gray-900 mb-3">Make a contribution</h2>
               <p className="text-gray-600 font-medium leading-relaxed mb-8">
-                Tell {hostName} you&apos;re supporting {c.charity_name}. Online payment isn&apos;t connected yet, so
-                nothing is charged here &mdash; we record your pledge and follow up with payment details.
+                Tell {hostName} you&apos;re supporting {c.charity_name}. Share your details below and we&apos;ll
+                email you payment instructions to complete your contribution.
               </p>
 
               <form className="space-y-5" onSubmit={handleSubmit}>
@@ -321,8 +321,8 @@ export default function CelebrationDetailClient() {
                   <Checkbox id="show-amount" label="Show my contribution amount publicly" checked={donor.showAmount} onChange={(v) => updateDonor("showAmount", v)} />
                   <Checkbox id="anonymous" label="Contribute anonymously" checked={donor.anonymous} onChange={(v) => updateDonor("anonymous", v)} />
                   <p className="text-xs text-gray-500 leading-relaxed">
-                    Names are visible by default and can be hidden. Amounts stay private unless you choose to share
-                    them &mdash; and while payments are still being set up, no amounts are shown publicly at all.
+                    Names are visible by default and can be hidden. Amounts are always private unless you
+                    explicitly choose to share yours.
                   </p>
                 </fieldset>
 
@@ -335,7 +335,7 @@ export default function CelebrationDetailClient() {
                 {submit.status === "success" && (
                   <p className="flex items-start gap-2 text-sm font-semibold text-green-700">
                     <Check className="w-4 h-4 shrink-0 mt-0.5" />
-                    Thank you &mdash; your contribution is recorded. Nothing has been charged yet.
+                    Thank you! Check your email &mdash; we&apos;ve sent you the details to complete your contribution.
                   </p>
                 )}
 

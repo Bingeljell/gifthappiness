@@ -20,11 +20,11 @@ const faqs = [
   },
   {
     question: "Do I get a tax benefit on my contribution?",
-    answer: "This is still to be confirmed and will depend on the charity, donation structure, and payment flow selected.",
+    answer: "That depends on the charity you support. Charities registered under Section 80G can issue a receipt you can claim against — the charity issues it directly, not GiftHappiness. Check the charity's page for its registration details.",
   },
   {
     question: "What payment modes are accepted?",
-    answer: "The intended payment modes include major options such as UPI, net banking, and cards. The payment gateway is still undecided.",
+    answer: "UPI, net banking, and major cards. We'll confirm the payment details with you when you contribute.",
   },
   {
     question: "Can I get a refund after making a donation?",

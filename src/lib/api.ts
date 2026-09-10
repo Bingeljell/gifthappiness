@@ -25,7 +25,7 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<ApiResult<
   } catch {
     return {
       ok: false,
-      error: "Could not reach the GiftHappiness API. The backend isn't deployed yet.",
+      error: "We couldn't reach GiftHappiness just now. Please check your connection and try again.",
     };
   }
 }
@@ -316,7 +316,7 @@ async function adminUploadCharityImage(token: string, endpoint: string, file: Fi
 
     return { ok: true, data: body as { url: string } };
   } catch {
-    return { ok: false, error: "Could not reach the GiftHappiness API. The backend isn't deployed yet." };
+    return { ok: false, error: "We couldn't reach GiftHappiness just now. Please check your connection and try again." };
   }
 }
 
