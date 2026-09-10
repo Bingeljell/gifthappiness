@@ -33,7 +33,8 @@ export async function listMyCelebrations(request: Request, env: Env): Promise<Re
     const charity = (Array.isArray(c.charity) ? c.charity[0] : c.charity) as
       | { name: string; slug: string }
       | undefined;
-    const { charity: _nested, ...rest } = c;
+    const rest = { ...c } as Record<string, unknown>;
+    delete rest.charity;
     return { ...rest, charity_name: charity?.name ?? null, charity_slug: charity?.slug ?? null };
   });
 

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { AlertCircle, Gift, Loader2, PartyPopper } from "lucide-react";
 import { getMyCelebrations, getMyContributions, type MyCelebration, type MyContribution } from "@/lib/api";
+import MyCelebrationCard from "./MyCelebrationCard";
 import { useSession } from "@/lib/session";
 
 type CelebrationsState =
@@ -93,16 +94,25 @@ export default function AccountPage() {
             )}
 
             {celebrations.status === "loaded" &&
+              token &&
               celebrations.celebrations.map((c) => (
-                <div key={c.id} className="rounded-2xl bg-white border border-gray-200 p-5 flex items-center justify-between gap-4">
-                  <div>
-                    <p className="font-bold text-gray-900">{c.celebration_type}</p>
-                    <p className="text-sm text-gray-500">{c.celebration_date || "No date set"}</p>
-                  </div>
-                  <span className="text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full bg-gray-100 text-gray-600">
-                    {c.status}
-                  </span>
-                </div>
+                <MyCelebrationCard
+                  key={c.id}
+                  celebration={c}
+                  token={token}
+                  onUpdated={(updated) =>
+                    setCelebrations((prev) =>
+                      prev.status === "loaded"
+                        ? {
+                            ...prev,
+                            celebrations: prev.celebrations.map((existing) =>
+                              existing.id === updated.id ? updated : existing,
+                            ),
+                          }
+                        : prev,
+                    )
+                  }
+                />
               ))}
           </div>
         </div>
