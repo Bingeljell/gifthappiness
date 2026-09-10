@@ -60,6 +60,54 @@ const initialForm: FormState = {
   message: "",
 };
 
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MOBILE_PATTERN = /^\+?[0-9]{10,15}$/;
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+type FieldErrors = Partial<Record<keyof FormState, string>>;
+
+function isRealDate(value: string): boolean {
+  if (!DATE_PATTERN.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}
+
+// Validates one step at a time so a host isn't shown errors for fields they
+// haven't reached yet.
+function validateStep(step: number, form: FormState): FieldErrors {
+  const errors: FieldErrors = {};
+
+  if (step === 0) {
+    if (!form.hostName.trim()) errors.hostName = "Please tell us who is celebrating.";
+    if (!form.email.trim()) errors.email = "We need an email address to reach you.";
+    else if (!EMAIL_PATTERN.test(form.email.trim())) errors.email = "That doesn't look like a valid email address.";
+    if (!form.mobile.trim()) errors.mobile = "A mobile number is required.";
+    else if (!MOBILE_PATTERN.test(form.mobile.replace(/\s/g, ""))) errors.mobile = "Enter a valid phone number, e.g. +91 98765 43210.";
+    if (!form.celebrationType.trim()) errors.celebrationType = "Choose what you're celebrating.";
+    if (form.celebrationDate && !isRealDate(form.celebrationDate)) errors.celebrationDate = "Use the format YYYY-MM-DD.";
+  }
+
+  if (step === 1) {
+    if (!form.charityName) errors.charityName = "Pick the charity your guests will support.";
+    if (form.activeFrom && !isRealDate(form.activeFrom)) errors.activeFrom = "Use the format YYYY-MM-DD.";
+    if (form.activeTill && !isRealDate(form.activeTill)) errors.activeTill = "Use the format YYYY-MM-DD.";
+
+    // Same two window rules the Worker enforces. The second is the one a host
+    // would never spot on their own: the page looks fine, but guests arrive
+    // and can't give.
+    if (!errors.activeFrom && !errors.activeTill && form.activeFrom && form.activeTill && form.activeFrom > form.activeTill) {
+      errors.activeTill = "Contributions can't close before they open.";
+    }
+    if (!errors.activeFrom && form.celebrationDate && form.activeFrom && isRealDate(form.celebrationDate) && form.activeFrom > form.celebrationDate) {
+      errors.activeFrom = "This opens after your celebration, so guests couldn't give in time.";
+    }
+    if (form.message.length > 1000) errors.message = "Please keep your message under 1000 characters.";
+  }
+
+  return errors;
+}
+
 type CharitiesState =
   | { status: "loading" }
   | { status: "loaded"; charities: Charity[] }
@@ -81,6 +129,7 @@ type PublishState =
 
 export default function CreateCelebration() {
   const [step, setStep] = useState(0);
+  const [errors, setErrors] = useState<FieldErrors>({});
   const [form, setForm] = useState<FormState>(initialForm);
   const [verification, setVerification] = useState<VerificationState>({ status: "idle" });
   const [verificationCode, setVerificationCode] = useState("");
@@ -103,10 +152,28 @@ export default function CreateCelebration() {
 
   const update = (field: keyof FormState, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
+    // Clear this field's error as soon as it's edited, so the form stops
+    // complaining the moment the host starts fixing it.
+    setErrors((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
   };
 
-  const goNext = () => setStep((s) => Math.min(s + 1, steps.length - 1));
-  const goBack = () => setStep((s) => Math.max(s - 1, 0));
+  const goNext = () => {
+    const found = validateStep(step, form);
+    setErrors(found);
+    if (Object.keys(found).length > 0) return;
+    setStep((s) => Math.min(s + 1, steps.length - 1));
+  };
+  const goBack = () => {
+    // Never block going back -- errors on the current step shouldn't trap
+    // someone trying to correct an earlier one.
+    setErrors({});
+    setStep((s) => Math.max(s - 1, 0));
+  };
 
   const sendVerificationEmail = async () => {
     if (!form.email) {
@@ -130,6 +197,15 @@ export default function CreateCelebration() {
   };
 
   const publishCelebration = async () => {
+    for (const stepIndex of [0, 1]) {
+      const found = validateStep(stepIndex, form);
+      if (Object.keys(found).length > 0) {
+        setErrors(found);
+        setStep(stepIndex);
+        return;
+      }
+    }
+
     const charity = charities.status === "loaded" ? charities.charities.find((c) => c.name === form.charityName) : undefined;
     if (!charity) {
       setPublish({ status: "error", message: "Choose a charity before publishing" });
@@ -208,9 +284,10 @@ export default function CreateCelebration() {
               onVerificationCodeChange={setVerificationCode}
               onSendVerification={sendVerificationEmail}
               onConfirmVerification={confirmVerificationCode}
+              errors={errors}
             />
           )}
-          {step === 1 && <StepCauseAndPage form={form} update={update} charities={charities} />}
+          {step === 1 && <StepCauseAndPage form={form} update={update} charities={charities} errors={errors} />}
           {step === 2 && <StepPreviewAndPublish form={form} publish={publish} charities={charities} />}
 
           <div className="flex items-center justify-between mt-10 pt-8 border-t border-gray-100">
@@ -260,6 +337,7 @@ function StepHostOccasion({
   onVerificationCodeChange,
   onSendVerification,
   onConfirmVerification,
+  errors,
 }: {
   form: FormState;
   update: (field: keyof FormState, value: string) => void;
@@ -268,6 +346,7 @@ function StepHostOccasion({
   onVerificationCodeChange: (value: string) => void;
   onSendVerification: () => void;
   onConfirmVerification: () => void;
+  errors: FieldErrors;
 }) {
   return (
     <div className="space-y-6">
@@ -278,6 +357,7 @@ function StepHostOccasion({
           placeholder="e.g. Sarah Mehta"
           value={form.hostName}
           onChange={(v) => update("hostName", v)}
+          error={errors.hostName}
         />
         <Field
           id="mobile"
@@ -286,6 +366,7 @@ function StepHostOccasion({
           inputMode="tel"
           value={form.mobile}
           onChange={(v) => update("mobile", v)}
+          error={errors.mobile}
         />
       </div>
 
@@ -314,6 +395,7 @@ function StepHostOccasion({
             value={form.email}
             onChange={(v) => update("email", v)}
             disabled={verification.status === "verified"}
+            error={errors.email}
           />
           <button
             type="button"
@@ -406,10 +488,12 @@ function StepCauseAndPage({
   form,
   update,
   charities,
+  errors,
 }: {
   form: FormState;
   update: (field: keyof FormState, value: string) => void;
   charities: CharitiesState;
+  errors: FieldErrors;
 }) {
   return (
     <div className="space-y-6">
@@ -433,8 +517,17 @@ function StepCauseAndPage({
             id="charity"
             value={form.charityName}
             onChange={(e) => update("charityName", e.target.value)}
-            className="w-full px-6 py-4 rounded-2xl bg-white border border-gray-200 focus:border-primary-pink/30 focus:ring-4 focus:ring-primary-pink/5 outline-none transition-all text-gray-900 appearance-none"
+            aria-invalid={errors.charityName ? true : undefined}
+            className={`w-full px-6 py-4 rounded-2xl bg-white border outline-none transition-all text-gray-900 appearance-none ${
+              errors.charityName
+                ? "border-primary-pink focus:border-primary-pink focus:ring-4 focus:ring-primary-pink/10"
+                : "border-gray-200 focus:border-primary-pink/30 focus:ring-4 focus:ring-primary-pink/5"
+            }`}
           >
+            {/* Explicit empty option: without it the select *looks* like the
+                first charity is chosen while form.charityName is still "",
+                so a host could submit believing they'd picked one. */}
+            <option value="">Choose a charity&hellip;</option>
             {charities.charities.map((charity) => (
               <option key={charity.slug} value={charity.name}>
                 {charity.name} ({charity.category})
@@ -442,11 +535,17 @@ function StepCauseAndPage({
             ))}
           </select>
         )}
+        {errors.charityName && (
+          <p className="flex items-start gap-1.5 text-sm font-semibold text-primary-pink ml-1">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            {errors.charityName}
+          </p>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Field id="active-from" label="Donation page active from" type="date" value={form.activeFrom} onChange={(v) => update("activeFrom", v)} />
-        <Field id="active-till" label="Donation page active till" type="date" value={form.activeTill} onChange={(v) => update("activeTill", v)} />
+        <Field id="active-from" label="Donation page active from" type="date" value={form.activeFrom} onChange={(v) => update("activeFrom", v)} error={errors.activeFrom} />
+        <Field id="active-till" label="Donation page active till" type="date" value={form.activeTill} onChange={(v) => update("activeTill", v)} error={errors.activeTill} />
       </div>
 
       <div className="space-y-2">
@@ -459,8 +558,21 @@ function StepCauseAndPage({
           placeholder="Tell your friends and family why this cause matters to you."
           value={form.message}
           onChange={(e) => update("message", e.target.value)}
-          className="w-full px-6 py-4 rounded-2xl bg-white border border-gray-200 focus:border-primary-pink/30 focus:ring-4 focus:ring-primary-pink/5 outline-none transition-all text-gray-900 placeholder:text-gray-400 resize-none"
+          className={`w-full px-6 py-4 rounded-2xl bg-white border outline-none transition-all text-gray-900 placeholder:text-gray-400 resize-none ${
+            errors.message
+              ? "border-primary-pink focus:border-primary-pink focus:ring-4 focus:ring-primary-pink/10"
+              : "border-gray-200 focus:border-primary-pink/30 focus:ring-4 focus:ring-primary-pink/5"
+          }`}
         />
+        <p className={`text-xs ml-1 ${form.message.length > 1000 ? "text-primary-pink font-bold" : "text-gray-400"}`}>
+          {form.message.length}/1000
+        </p>
+        {errors.message && (
+          <p className="flex items-start gap-1.5 text-sm font-semibold text-primary-pink ml-1">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            {errors.message}
+          </p>
+        )}
       </div>
 
     </div>
@@ -576,6 +688,7 @@ function Field({
   value,
   onChange,
   disabled = false,
+  error,
 }: {
   id: string;
   label: string;
@@ -585,6 +698,7 @@ function Field({
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
+  error?: string;
 }) {
   return (
     <div className="space-y-2">
@@ -599,8 +713,20 @@ function Field({
         value={value}
         disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full px-6 py-4 rounded-2xl bg-white border border-gray-200 focus:border-primary-pink/30 focus:ring-4 focus:ring-primary-pink/5 outline-none transition-all text-gray-900 placeholder:text-gray-400 disabled:opacity-60"
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? `${id}-error` : undefined}
+        className={`w-full px-6 py-4 rounded-2xl bg-white border outline-none transition-all text-gray-900 placeholder:text-gray-400 disabled:opacity-60 ${
+          error
+            ? "border-primary-pink focus:border-primary-pink focus:ring-4 focus:ring-primary-pink/10"
+            : "border-gray-200 focus:border-primary-pink/30 focus:ring-4 focus:ring-primary-pink/5"
+        }`}
       />
+      {error && (
+        <p id={`${id}-error`} className="flex items-start gap-1.5 text-sm font-semibold text-primary-pink ml-1">
+          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+          {error}
+        </p>
+      )}
     </div>
   );
 }

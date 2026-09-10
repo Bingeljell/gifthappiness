@@ -1,6 +1,6 @@
 import { getSupabaseClient } from "../lib/supabase";
 import { json, errorResponse } from "../lib/response";
-import { readJsonBody, requireString, requireEmail, requireMobile, optionalString, ValidationError } from "../lib/validate";
+import { readJsonBody, requireString, requireEmail, requireMobile, optionalString, optionalDate, validateCelebrationWindow, ValidationError } from "../lib/validate";
 import { notifyHostSubmitted, notifyAdminsOfNewCelebration } from "../lib/emails";
 import type { Env } from "../lib/env";
 
@@ -26,10 +26,11 @@ export async function createCelebration(request: Request, env: Env, ctx: Executi
     const hostMobile = requireMobile(body.hostMobile, "hostMobile");
     const hostAddress = optionalString(body.hostAddress, "hostAddress");
     const celebrationType = requireString(body.celebrationType, "celebrationType");
-    const celebrationDate = optionalString(body.celebrationDate, "celebrationDate");
+    const celebrationDate = optionalDate(body.celebrationDate, "celebrationDate");
     const charitySlug = requireString(body.charitySlug, "charitySlug");
-    const activeFrom = optionalString(body.activeFrom, "activeFrom");
-    const activeTill = optionalString(body.activeTill, "activeTill");
+    const activeFrom = optionalDate(body.activeFrom, "activeFrom");
+    const activeTill = optionalDate(body.activeTill, "activeTill");
+    validateCelebrationWindow({ celebrationDate, activeFrom, activeTill });
     const message = optionalString(body.message, "message", { maxLength: 1000 });
 
     const supabase = getSupabaseClient(env);

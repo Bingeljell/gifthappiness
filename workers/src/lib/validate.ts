@@ -51,6 +51,50 @@ export function optionalBoolean(value: unknown, fallback: boolean): boolean {
   return typeof value === "boolean" ? value : fallback;
 }
 
+
+// ISO calendar date (YYYY-MM-DD). Checked against Date rather than the regex
+// alone so "2026-02-31" is rejected rather than silently rolling into March.
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+export function optionalDate(value: unknown, field: string): string | undefined {
+  const raw = optionalString(value, field, { maxLength: 10 });
+  if (raw === undefined) return undefined;
+
+  if (!DATE_PATTERN.test(raw)) {
+    throw new ValidationError(`${field} must be a date in YYYY-MM-DD format`);
+  }
+  const parsed = new Date(`${raw}T00:00:00Z`);
+  if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== raw) {
+    throw new ValidationError(`${field} is not a real date`);
+  }
+  return raw;
+}
+
+// The contribution window has to make sense on its own, and relative to the
+// celebration. A window that closes before it opens accepts nothing; a window
+// that opens only after the celebration has passed means guests arrive at the
+// page and cannot give -- the failure a host is least likely to notice, since
+// the page looks fine to them.
+//
+// Takes the *effective* values (existing row merged with the update) so an
+// edit that changes one end of the window is still checked against the other.
+export function validateCelebrationWindow(dates: {
+  celebrationDate?: string | null;
+  activeFrom?: string | null;
+  activeTill?: string | null;
+}): void {
+  const { celebrationDate, activeFrom, activeTill } = dates;
+
+  if (activeFrom && activeTill && activeFrom > activeTill) {
+    throw new ValidationError("Contributions cannot close before they open. Check the contribution dates.");
+  }
+  if (celebrationDate && activeFrom && activeFrom > celebrationDate) {
+    throw new ValidationError(
+      "Contributions would open after the celebration date, so guests could not give in time. Open the window on or before the celebration.",
+    );
+  }
+}
+
 export async function readJsonBody(request: Request): Promise<Record<string, unknown>> {
   try {
     const body = await request.json();
