@@ -5,7 +5,7 @@ import { listCharities, getCharityBySlug } from "./routes/charities";
 import { submitContribution } from "./routes/contributions";
 import { requestVerification, confirmVerification } from "./routes/verification";
 import { requestLogin, confirmLogin, getMe, logout } from "./routes/auth";
-import { listMyCelebrations, listMyContributions } from "./routes/me";
+import { listMyCelebrations, listMyContributions, updateMyCelebration } from "./routes/me";
 import { listCharitiesAdmin, createCharity, updateCharity, deleteCharity } from "./routes/admin";
 import { listCelebrationsAdmin, updateCelebration, deleteCelebration } from "./routes/adminCelebrations";
 import { uploadCharityLogo, uploadCharityHeader } from "./routes/uploads";
@@ -100,6 +100,11 @@ async function handleRequest(request: Request, env: Env, ctx: ExecutionContext):
   // GET /me/celebrations
   if (method === "GET" && segments.length === 2 && segments[0] === "me" && segments[1] === "celebrations") {
     return listMyCelebrations(request, env);
+  }
+
+  // PATCH /me/celebrations/:slug
+  if (method === "PATCH" && segments.length === 3 && segments[0] === "me" && segments[1] === "celebrations") {
+    return updateMyCelebration(segments[2], request, env);
   }
 
   // GET /me/contributions
