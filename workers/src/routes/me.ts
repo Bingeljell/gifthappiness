@@ -1,7 +1,7 @@
 import { getSupabaseClient } from "../lib/supabase";
 import { json, errorResponse } from "../lib/response";
 import { getSessionUser } from "../lib/session";
-import { readJsonBody, optionalString, ValidationError } from "../lib/validate";
+import { readJsonBody, optionalString, optionalDate, validateCelebrationWindow, ValidationError } from "../lib/validate";
 import type { Env } from "../lib/env";
 
 // GET /me/celebrations
@@ -119,7 +119,7 @@ export async function updateMyCelebration(slug: string, request: Request, env: E
 
     const { data: celebration, error: readError } = await supabase
       .from("celebrations")
-      .select("id, host_id, status")
+      .select("id, host_id, status, celebration_date, active_from, active_till")
       .eq("slug", slug)
       .maybeSingle();
 
@@ -176,6 +176,10 @@ export async function updateMyCelebration(slug: string, request: Request, env: E
       }
 
       const column = FIELD_TO_COLUMN[field];
+      if (field === "celebrationDate" || field === "activeFrom" || field === "activeTill") {
+        updates[column] = optionalDate(body[field], field) ?? null;
+        continue;
+      }
       const maxLength = field === "message" ? 1000 : undefined;
       updates[column] = optionalString(body[field], field, maxLength ? { maxLength } : undefined) ?? null;
     }
@@ -183,6 +187,17 @@ export async function updateMyCelebration(slug: string, request: Request, env: E
     if (Object.keys(updates).length === 0) {
       return errorResponse("No updatable fields provided", env, 422);
     }
+
+    // Merge over the existing row so changing one end of the window is still
+    // checked against the other end as it currently stands.
+    validateCelebrationWindow({
+      celebrationDate: ("celebration_date" in updates
+        ? updates.celebration_date
+        : celebration.celebration_date) as string | null,
+      activeFrom: ("active_from" in updates ? updates.active_from : celebration.active_from) as string | null,
+      activeTill: ("active_till" in updates ? updates.active_till : celebration.active_till) as string | null,
+    });
+
     updates.updated_at = new Date().toISOString();
 
     const { data, error } = await supabase

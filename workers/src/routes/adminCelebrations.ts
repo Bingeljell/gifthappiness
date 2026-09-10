@@ -1,6 +1,6 @@
 import { getSupabaseClient } from "../lib/supabase";
 import { json, errorResponse } from "../lib/response";
-import { readJsonBody, optionalString, ValidationError } from "../lib/validate";
+import { readJsonBody, optionalString, optionalDate, validateCelebrationWindow, ValidationError } from "../lib/validate";
 import { getSessionUser } from "../lib/session";
 import { notifyHostApproved, notifyHostCompleted } from "../lib/emails";
 import type { Env } from "../lib/env";
@@ -74,9 +74,9 @@ export async function updateCelebration(slug: string, request: Request, env: Env
       updates.status = status;
     }
     if ("celebrationType" in body) updates.celebration_type = optionalString(body.celebrationType, "celebrationType") ?? null;
-    if ("celebrationDate" in body) updates.celebration_date = optionalString(body.celebrationDate, "celebrationDate") ?? null;
-    if ("activeFrom" in body) updates.active_from = optionalString(body.activeFrom, "activeFrom") ?? null;
-    if ("activeTill" in body) updates.active_till = optionalString(body.activeTill, "activeTill") ?? null;
+    if ("celebrationDate" in body) updates.celebration_date = optionalDate(body.celebrationDate, "celebrationDate") ?? null;
+    if ("activeFrom" in body) updates.active_from = optionalDate(body.activeFrom, "activeFrom") ?? null;
+    if ("activeTill" in body) updates.active_till = optionalDate(body.activeTill, "activeTill") ?? null;
     if ("message" in body) updates.message = optionalString(body.message, "message", { maxLength: 1000 }) ?? null;
 
     if (Object.keys(updates).length === 0) {
@@ -91,10 +91,22 @@ export async function updateCelebration(slug: string, request: Request, env: Env
     // celebration is live" email every time.
     const { data: previous } = await supabase
       .from("celebrations")
-      .select("status")
+      .select("status, celebration_date, active_from, active_till")
       .eq("slug", slug)
       .maybeSingle();
     const previousStatus = previous?.status as string | undefined;
+
+    // Merged against the existing row, same as the host edit path: an admin
+    // changing one date must not be able to leave an incoherent window.
+    if (previous) {
+      validateCelebrationWindow({
+        celebrationDate: ("celebration_date" in updates
+          ? updates.celebration_date
+          : previous.celebration_date) as string | null,
+        activeFrom: ("active_from" in updates ? updates.active_from : previous.active_from) as string | null,
+        activeTill: ("active_till" in updates ? updates.active_till : previous.active_till) as string | null,
+      });
+    }
 
     const { data, error } = await supabase
       .from("celebrations")

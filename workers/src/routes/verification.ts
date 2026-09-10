@@ -126,3 +126,38 @@ export async function confirmVerification(request: Request, env: Env): Promise<R
     return errorResponse("Unexpected error", env, 500);
   }
 }
+
+// Has this contact completed a verification for this purpose recently?
+//
+// Deliberately reads `verifications` rather than `users.email_verified`:
+// during a first-time /create the user row does not exist yet (it's created
+// by createCelebration afterwards), so confirmVerification's
+// `update(users).eq(email)` matches zero rows and the column stays false.
+// Gating on that column would reject every genuinely-verified new host.
+//
+// Bounded by age so a verification from months ago can't authorise a
+// celebration today.
+const VERIFICATION_VALID_HOURS = 24;
+
+export async function hasRecentVerification(
+  env: Env,
+  channel: string,
+  contact: string,
+  purpose: string,
+): Promise<boolean> {
+  const supabase = getSupabaseClient(env);
+  const cutoff = new Date(Date.now() - VERIFICATION_VALID_HOURS * 60 * 60 * 1000).toISOString();
+
+  const { data, error } = await supabase
+    .from("verifications")
+    .select("id")
+    .eq("channel", channel)
+    .eq("contact", contact.toLowerCase())
+    .eq("purpose", purpose)
+    .not("verified_at", "is", null)
+    .gte("verified_at", cutoff)
+    .limit(1)
+    .maybeSingle();
+
+  return !error && !!data;
+}

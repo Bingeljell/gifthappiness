@@ -102,11 +102,16 @@ export type CreateCelebrationInput = {
   message?: string;
 };
 
+// token is optional: guests create celebrations too. When present and the
+// session's email matches hostEmail, the Worker accepts it as proof of control
+// over the address and doesn't require a separate verification code.
 export function createCelebration(
   input: CreateCelebrationInput,
+  token?: string,
 ): Promise<ApiResult<{ celebration: { id: string; slug: string; status: string } }>> {
   return apiFetch("/celebrations", {
     method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     body: JSON.stringify(input),
   });
 }
