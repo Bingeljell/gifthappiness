@@ -7,16 +7,21 @@ Last updated 2026-09-10.
 still outstanding" view. When an item is done, delete it here and record it in
 `docs/changelog.md`.
 
+**Note:** test celebrations on `/celebrations` are deliberate — they're how the people
+running the site see the real flow end to end. Don't delete them as cleanup.
+
 ---
 
 ## Blocking or user-visible now
 
-### `hello@gifthappiness.org` does not exist
+### `hello@gifthappiness.org` does not exist yet
 That address is printed on **six pages** — Contact, Privacy, Terms, Refund, For Charities,
 and in email footers — and mail sent to it currently bounces.
 
-DNS is already on Cloudflare, so **Cloudflare Email Routing** covers this for free: add the
-address, forward it wherever you like. Zoho's free tier or Google Workspace also work.
+Waiting on the people running the site to decide where they want it to land; the technical
+part is small. DNS is already on Cloudflare, so **Cloudflare Email Routing** covers it for
+free: add the address, forward it wherever they like. Zoho's free tier or Google Workspace
+also work.
 
 Once it exists, change `EMAIL_REPLY_TO` in `workers/wrangler.toml` from
 `no-reply@mail.gifthappiness.org` to `hello@gifthappiness.org` and redeploy the Worker.
@@ -41,10 +46,6 @@ v=DMARC1; p=none; rua=mailto:<a real inbox>
 ```
 
 Tighten to `quarantine` after a few weeks of clean reports.
-
-### Test celebration is publicly listed
-A celebration whose message reads *"This is a test page. Will be deleted"* appears on
-`/celebrations`. Delete or edit it from `/admin`.
 
 ---
 
