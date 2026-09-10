@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { AlertCircle, Gift, Heart, Loader2, ShieldCheck, Share2 } from "lucide-react";
 import { getCharities, type Charity } from "@/lib/api";
 import CharityBadge from "@/components/CharityBadge";
@@ -27,6 +28,32 @@ const steps = [
   },
 ];
 
+
+// Homepage imagery. Files are 1600x900 and served straight from /public --
+// next.config.ts sets images.unoptimized, so there's no resizing at build or
+// request time and the intrinsic size is what ships. Rendered small here, so
+// the fixed heights below matter more than the source dimensions.
+const homeImages = [
+  {
+    src: "/homepage-images/animal-care.jpg",
+    alt: "Volunteers sitting with rescued dogs and puppies outside a community animal shelter at sunset.",
+    title: "Animal welfare",
+    caption: "Shelters, rescue and rehoming",
+  },
+  {
+    src: "/homepage-images/ocean-care.jpg",
+    alt: "People of all ages collecting plastic waste into bags during a beach clean-up drive at sunrise.",
+    title: "Clean oceans",
+    caption: "Coastal clean-ups and plastic-free drives",
+  },
+  {
+    src: "/homepage-images/senior-care.jpg",
+    alt: "Carers spending time with older residents painting and walking in the garden of a senior care home.",
+    title: "Senior care",
+    caption: "Companionship, care and dignity",
+  },
+];
+
 const criteria = [
   "Registered NGO or charity.",
   "Minimum three years of existence.",
@@ -49,7 +76,7 @@ export default function Home() {
 
   return (
     <div className="flex flex-col">
-      <section className="relative pt-24 pb-40 overflow-hidden">
+      <section className="relative pt-24 pb-24 overflow-hidden">
         <div className="absolute inset-0 bg-[#FFF4ED] -z-30" />
         <div className="absolute inset-0 bg-gradient-to-b from-[#FFD9C8]/60 to-transparent -z-20" />
 
@@ -88,6 +115,41 @@ export default function Home() {
               Browse Charities
             </Link>
           </div>
+
+          {/* Staggered rather than a flat row: the vertical offsets keep it
+              feeling like a scrapbook instead of a stock-photo grid. Offsets
+              only apply from sm upwards, since stacked on mobile they'd just
+              read as uneven spacing. */}
+          <div className="mt-20 grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            {homeImages.map((image, index) => (
+              <figure
+                key={image.src}
+                className={`group relative rounded-[32px] overflow-hidden shadow-2xl shadow-gray-900/10 ${
+                  index === 1 ? "sm:-translate-y-8" : index === 2 ? "sm:translate-y-4" : ""
+                }`}
+              >
+                <Image
+                  src={image.src}
+                  alt={image.alt}
+                  width={1600}
+                  height={900}
+                  className="w-full h-60 sm:h-72 object-cover transition-transform duration-700 group-hover:scale-105"
+                  /* First image is the largest thing above the fold on mobile,
+                     so it gets priority to keep LCP down. */
+                  priority={index === 0}
+                  unoptimized
+                />
+                <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-gray-900/85 via-gray-900/40 to-transparent p-5 text-left">
+                  <p className="text-white font-black text-base leading-tight">{image.title}</p>
+                  <p className="text-white/80 text-sm font-medium leading-snug mt-0.5">{image.caption}</p>
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+
+          <p className="mt-10 text-gray-500 font-medium">
+            A few of the causes your guests could support instead of buying gifts.
+          </p>
         </div>
       </section>
 
@@ -197,6 +259,22 @@ export default function Home() {
       <section className="py-32">
         <div className="container mx-auto px-4">
           <div className="bg-gray-900 rounded-[60px] p-16 md:p-32 text-center overflow-hidden relative shadow-2xl">
+            {/* Photographic backdrop, heavily darkened. The gray-900 layer sits
+                on top at high opacity so the headline keeps its contrast --
+                the image is atmosphere, not something the reader has to parse. */}
+            <Image
+              src="/homepage-images/ocean-care.jpg"
+              alt=""
+              aria-hidden="true"
+              fill
+              className="object-cover opacity-70"
+              unoptimized
+            />
+            {/* Darkened enough for white text to stay legible, light enough
+                that the scene actually reads. The gradient is stronger at the
+                corners, where the headline and button sit, and lifts through
+                the middle so the photo shows. */}
+            <div className="absolute inset-0 bg-gradient-to-br from-gray-900/85 via-gray-900/60 to-gray-900/85" />
             <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(#FF2D55 1px, transparent 1px)", backgroundSize: "32px 32px" }} />
             <div className="absolute top-0 right-0 w-96 h-96 bg-primary-pink/20 rounded-full blur-[120px] -mr-48 -mt-48" />
             <div className="absolute bottom-0 left-0 w-96 h-96 bg-primary-pink/10 rounded-full blur-[120px] -ml-48 -mb-48" />
@@ -205,7 +283,9 @@ export default function Home() {
               <h3 className="text-5xl md:text-7xl font-black text-white mb-10 leading-tight tracking-tight">
                 Ready to make your next celebration unforgettable?
               </h3>
-              <p className="max-w-xl mx-auto text-gray-400 text-xl mb-16 font-medium leading-relaxed">
+              {/* Was gray-400, which had too little contrast once a photo sat
+                  behind it rather than flat dark grey. */}
+              <p className="max-w-xl mx-auto text-white/90 text-xl mb-16 font-medium leading-relaxed">
                 Create your celebration page in minutes. No fees, no fuss, just joy and generosity.
               </p>
               <Link href="/create" className="inline-block px-14 py-6 rounded-full bg-primary-pink text-white font-black text-xl hover:bg-primary-pink/90 transition-all shadow-2xl shadow-primary-pink/40 scale-100 hover:scale-105 duration-300">
