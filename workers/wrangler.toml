@@ -19,14 +19,29 @@ SUPABASE_URL = "https://fsradcbnqocpvxqwizdt.supabase.co"
 # dev also needs a manual switch back to http://localhost:3000 for now.
 ALLOWED_ORIGIN = "https://gifthappiness.pages.dev"
 
+# Public site origin used to build links inside emails. Kept separate from
+# ALLOWED_ORIGIN (a CORS control) so the two can differ in local development.
+SITE_URL = "https://gifthappiness.pages.dev"
+
+# Verified Resend sending domain. A subdomain, not the root: the root's MX
+# records belong to whichever mailbox provider receives human mail, and
+# Resend wants its own MX for bounce handling -- putting both on the root
+# collides. Also isolates transactional sending reputation from the root.
+EMAIL_DOMAIN = "mail.gifthappiness.org"
+
+# Where replies land. Every outbound email sets this as Reply-To so a human
+# reply reaches a real inbox instead of a dead noreply address. Update once
+# the root-domain mailbox exists -- until then replies bounce.
+EMAIL_REPLY_TO = "hello@gifthappiness.org"
+
 # Secrets (set via `wrangler secret put`, never committed):
 #   SUPABASE_SERVICE_ROLE_KEY - Supabase service role key, bypasses RLS; Worker-only.
 #   ADMIN_API_KEY             - shared secret for admin-only routes until a real
 #                               admin-auth strategy is picked (see docs/plan.md
 #                               CMS/Admin Direction).
-#   RESEND_API_KEY            - Resend API key for sending verification/login
-#                               codes (see workers/src/lib/email.ts). Sends from
-#                               Resend's shared sandbox address until
-#                               gifthappiness.com is verified as a sending
-#                               domain there -- until then, only deliverable to
-#                               the email on the Resend account itself.
+#   RESEND_API_KEY            - Resend API key for all outbound mail (see
+#                               workers/src/lib/email.ts). Sends from the
+#                               verified EMAIL_DOMAIN above; sending addresses
+#                               (noreply@, celebrations@, alerts@) need no
+#                               provisioning -- any local part at a verified
+#                               domain works immediately.

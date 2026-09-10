@@ -2,7 +2,7 @@ import { getSupabaseClient } from "../lib/supabase";
 import { json, errorResponse } from "../lib/response";
 import { readJsonBody, requireString, requireEmail, requireMobile, ValidationError } from "../lib/validate";
 import { generateCode, hashCode } from "../lib/code";
-import { sendEmail } from "../lib/email";
+import { sendVerificationCode } from "../lib/emails";
 import type { Env } from "../lib/env";
 
 const CODE_TTL_MINUTES = 15;
@@ -63,7 +63,7 @@ export async function requestVerification(request: Request, env: Env): Promise<R
     }
 
     if (channel === "email") {
-      const sent = await sendEmail(env, contact, "Your GiftHappiness verification code", `Your verification code is ${code}. It expires in ${CODE_TTL_MINUTES} minutes.`);
+      const sent = await sendVerificationCode(env, contact, code, CODE_TTL_MINUTES);
       if (!sent) {
         return errorResponse("Could not send the verification code email", env, 502);
       }

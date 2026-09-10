@@ -390,6 +390,56 @@ Two fixes:
 
 **Applied live 2026-09-01**: `wrangler deploy` shipped both. Verified end to end by resolving the actual reported case: deleted the leftover `test-host-birthday-...` celebration, then successfully deleted `unicef` -- confirmed via `GET /charities` that only `yoda` remains.
 
+## Phase 10: Transactional Email (2026-09-10)
+
+**Production domain correction: the domain is `gifthappiness.org`, not `.com`.** Earlier notes in this file and in `docs/changelog.md` said `.com`; those were wrong.
+
+### Sending vs receiving
+
+Two separate systems, deliberately kept apart:
+
+- **Sending** — Resend, from the verified subdomain `mail.gifthappiness.org`. Sending addresses (`noreply@`, `celebrations@`, `alerts@`) require no provisioning anywhere: any local part at a verified domain works immediately, so they live as constants in `workers/src/lib/email.ts`.
+- **Receiving** — a mailbox provider on the root `gifthappiness.org`, still to be chosen (Zoho free tier / Google Workspace / Cloudflare Email Routing). `EMAIL_REPLY_TO` points at `hello@gifthappiness.org` and replies bounce until that inbox exists.
+
+**Why a subdomain rather than the root.** Resend wants an MX record on its sending domain for bounce handling, and the mailbox provider wants MX on the root — putting both on the root collides, and the collision only surfaces the day a real inbox is added. The subdomain also isolates transactional sending reputation from the root, so a spam-flagged batch of verification codes can't damage deliverability of ordinary human mail. A future bulk/marketing sender should get its own subdomain again (e.g. `news.`) for the same reason.
+
+DNS lives at GoDaddy. Note GoDaddy auto-appends the domain to record names, so DKIM is entered as `resend._domainkey.mail`, not the full hostname. DMARC starts at `p=none` on the root and tightens later; a subdomain inherits the root policy unless `sp=` overrides it.
+
+### Root cause of the "only I get emails" bug
+
+`FROM_ADDRESS` was hardcoded to Resend's shared sandbox sender `onboarding@resend.dev`, which Resend only delivers to the address on the Resend account itself. Every send to anyone else was accepted with a `200` and silently dropped — so `sendEmail` returned `true`, the API reported success, and nothing appeared in logs. Verifying a real sending domain is the only fix for that class of failure; error-body logging (added here) does not catch it, because there is no error.
+
+### What sends now
+
+| Email | Trigger | To |
+| --- | --- | --- |
+| Sign-in code | `POST /auth/request` | User |
+| Verification code | `POST /verify/request` | Host |
+| Celebration needs review | `POST /celebrations` | Every `is_admin` user |
+| Submitted, under review | `POST /celebrations` | Host |
+| Celebration is live | `PATCH /admin/celebrations/:slug` → `published` | Host |
+| Contribution recorded | `POST /celebrations/:slug/contributions` | Donor |
+| New contribution | `POST /celebrations/:slug/contributions` | Host |
+| Celebration complete | `PATCH /admin/celebrations/:slug` → `expired` | Host |
+
+Admin alerts go to every user with `is_admin = true` rather than a configured address, so adding an admin needs no redeploy.
+
+### Design decisions
+
+- **Codes fail the request; notifications never do.** A user who never receives a sign-in code cannot continue, so those stay synchronous and return 502 on failure. Notification mail reports on work already committed to the database — returning an error would tell a donor their contribution failed when the row exists. Those go through `sendNotification`, which uses `ctx.waitUntil`. This is why `fetch` in `workers/src/index.ts` now takes `ctx: ExecutionContext`.
+- **Status emails fire only on an actual transition.** `updateCelebration` reads the prior status before updating; otherwise editing a published celebration's message would re-send "your celebration is live" every time.
+- **Host contribution mail respects donor privacy.** `anonymous` / `show_name` / `show_amount` redact the host's email exactly as they redact the public view — a host must not learn by email what a donor chose to hide on the page.
+- **The donor email is not a receipt.** No payment gateway exists (`payment_status` is always `pending`), so the copy says the contribution has been *recorded* and states plainly that no money has been taken. Revisit when payments go live.
+- Email HTML is deliberately table-based with inline styles (`workers/src/lib/emailTemplate.ts`) — email clients strip stylesheets and ignore modern layout. Every email sends a plain-text alternative alongside the HTML, since a missing text part hurts spam scoring.
+
+### Open gaps found while building this
+
+- [ ] **A host cannot see who contributed to their celebration.** `GET /me/contributions` filters on `donor_id`, i.e. the user's *own* donations to others; `GET /me/celebrations` returns no contribution data, not even a count. There is no endpoint and no page for the host view. This is why the per-contribution host email is currently the only channel by which a host learns of a contribution. The email is the stopgap; the host dashboard is the real fix, and until it exists this email should not be batched into a digest or removed.
+- [ ] **`/celebration/[slug]` still does not exist**, so the "your celebration is live" email has no public page to link to and points at `/account` instead. One-line change once the route ships.
+- [ ] **`flagged` has no reason column**, so a rejection email cannot tell a host why. Needs a schema change before rejection mail is worth sending.
+- [ ] Set up the root-domain mailbox and point `EMAIL_REPLY_TO` at it.
+- [ ] Reminder mail ("your celebration ends soon") needs a cron trigger; `celebrations.active_till` already exists.
+
 ## CMS And Admin Direction
 
 Superseded by Phase 6 above for auth/roles specifically; the sections below (content-management scope, non-auth admin decisions) still stand.
@@ -443,7 +493,7 @@ Dynamic SEO work:
 
 ## Domain And DNS Plan
 
-The domain is currently on GoDaddy.
+The domain is `gifthappiness.org`, currently on GoDaddy. (Earlier drafts of this doc said `.com` -- that was wrong.)
 
 Options:
 

@@ -13,7 +13,7 @@ import { uploadCharityLogo, uploadCharityHeader } from "./routes/uploads";
 // Hand-rolled routing: the route count here doesn't justify pulling in a
 // router library. Revisit if this grows past a dozen or so routes.
 const worker = {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     if (request.method === "OPTIONS") {
       return new Response(null, { status: 204, headers: corsHeaders(env) });
     }
@@ -28,7 +28,7 @@ const worker = {
 
     // POST /celebrations
     if (method === "POST" && segments.length === 1 && segments[0] === "celebrations") {
-      return createCelebration(request, env);
+      return createCelebration(request, env, ctx);
     }
 
     // GET /celebrations/:slug
@@ -48,7 +48,7 @@ const worker = {
 
     // POST /celebrations/:slug/contributions
     if (method === "POST" && segments.length === 3 && segments[0] === "celebrations" && segments[2] === "contributions") {
-      return submitContribution(segments[1], request, env);
+      return submitContribution(segments[1], request, env, ctx);
     }
 
     // POST /verify/request
@@ -102,7 +102,7 @@ const worker = {
     // GET /admin/celebrations, PATCH /admin/celebrations/:slug
     if (segments[0] === "admin" && segments[1] === "celebrations") {
       if (method === "GET" && segments.length === 2) return listCelebrationsAdmin(request, env);
-      if (method === "PATCH" && segments.length === 3) return updateCelebration(segments[2], request, env);
+      if (method === "PATCH" && segments.length === 3) return updateCelebration(segments[2], request, env, ctx);
       if (method === "DELETE" && segments.length === 3) return deleteCelebration(segments[2], request, env);
     }
 
