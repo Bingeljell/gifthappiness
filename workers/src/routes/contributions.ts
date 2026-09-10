@@ -10,7 +10,7 @@ import {
   ValidationError,
 } from "../lib/validate";
 import { getSessionUser } from "../lib/session";
-import { notifyDonorContribution, notifyHostContribution } from "../lib/emails";
+import { notifyDonorContribution } from "../lib/emails";
 import type { Env } from "../lib/env";
 
 // POST /celebrations/:slug/contributions
@@ -41,7 +41,7 @@ export async function submitContribution(slug: string, request: Request, env: En
 
     const { data: celebration, error: celebrationError } = await supabase
       .from("celebrations")
-      .select("id, status, celebration_type, host:users!host_id(name, email), charity:charities!charity_id(name)")
+      .select("id, status, celebration_type, charity:charities!charity_id(name)")
       .eq("slug", slug)
       .maybeSingle();
 
@@ -75,11 +75,12 @@ export async function submitContribution(slug: string, request: Request, env: En
       return errorResponse("Could not record contribution", env, 500);
     }
 
-    // Notifications only -- the contribution row is already committed, so
-    // neither send may affect the response the donor gets.
-    const host = (Array.isArray(celebration.host) ? celebration.host[0] : celebration.host) as
-      | { name: string | null; email: string }
-      | undefined;
+    // Notification only -- the contribution row is already committed, so the
+    // send must not affect the response the donor gets.
+    //
+    // The host is deliberately NOT emailed per contribution (product decision
+    // 2026-09-10): the public celebration page lists contributors, so that is
+    // the host's channel. Revisit with a digest if hosts ask for one.
     const charity = (Array.isArray(celebration.charity) ? celebration.charity[0] : celebration.charity) as
       | { name: string }
       | undefined;
@@ -94,20 +95,6 @@ export async function submitContribution(slug: string, request: Request, env: En
         amount,
         charityName,
         celebrationType,
-      });
-    }
-
-    if (host?.email) {
-      notifyHostContribution(env, ctx, {
-        hostEmail: host.email,
-        hostName: host.name,
-        donorName,
-        amount,
-        anonymous,
-        showName,
-        showAmount,
-        message: message ?? null,
-        charityName,
       });
     }
 

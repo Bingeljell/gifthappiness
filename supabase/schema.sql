@@ -223,24 +223,40 @@ select
   c.id, c.slug, c.celebration_type, c.celebration_date, c.active_from,
   c.active_till, c.message, c.picture_url, c.status,
   u.name as host_name,
-  ch.slug as charity_slug, ch.name as charity_name
+  ch.slug as charity_slug, ch.name as charity_name,
+  ch.short_description as charity_short_description,
+  ch.logo_url as charity_logo_url,
+  ch.header_image_url as charity_header_image_url
 from celebrations c
 join users u on u.id = c.host_id
 join charities ch on ch.id = c.charity_id
 where c.status = 'published';
 
--- Amount is only shown when the donor opted in; name is redacted when
--- anonymous or when the donor chose not to show it.
+-- Name is redacted when anonymous or when the donor chose not to show it.
+--
+-- Rows: everything except 'failed'. The original `where payment_status =
+-- 'succeeded'` made this view permanently empty -- no payment gateway exists
+-- yet (see docs/plan.md "Payments Plan"), so every contribution is written as
+-- 'pending' and nothing ever reached 'succeeded'. The public celebration page
+-- would therefore have shown an empty contributor list forever.
+--
+-- Amount: shown only once payment actually succeeded AND the donor opted in.
+-- Product decision (2026-09-10): until payments are live the celebration page
+-- shows who is supporting, never how much, because no money has changed hands
+-- and displaying an amount would imply it had. Written as a condition rather
+-- than a hardcoded null so amounts start appearing on their own the moment a
+-- gateway moves rows to 'succeeded' -- no second migration needed.
 create or replace view contributions_public as
 select
   id,
   celebration_id,
   case when anonymous or not show_name then 'Anonymous contributor' else donor_name end as donor_name,
-  case when show_amount then amount else null end as amount,
+  case when show_amount and payment_status = 'succeeded' then amount else null end as amount,
+  payment_status,
   message,
   created_at
 from contributions
-where payment_status = 'succeeded';
+where payment_status <> 'failed';
 
 grant select on charities_public, celebrations_public, contributions_public to anon, authenticated;
 

@@ -1,6 +1,6 @@
 import type { Env } from "./lib/env";
 import { corsHeaders, errorResponse, json } from "./lib/response";
-import { createCelebration, getCelebration } from "./routes/celebrations";
+import { createCelebration, getCelebration, listCelebrationContributions } from "./routes/celebrations";
 import { listCharities, getCharityBySlug } from "./routes/charities";
 import { submitContribution } from "./routes/contributions";
 import { requestVerification, confirmVerification } from "./routes/verification";
@@ -49,6 +49,11 @@ const worker = {
     // POST /celebrations/:slug/contributions
     if (method === "POST" && segments.length === 3 && segments[0] === "celebrations" && segments[2] === "contributions") {
       return submitContribution(segments[1], request, env, ctx);
+    }
+
+    // GET /celebrations/:slug/contributions
+    if (method === "GET" && segments.length === 3 && segments[0] === "celebrations" && segments[2] === "contributions") {
+      return listCelebrationContributions(segments[1], env);
     }
 
     // POST /verify/request
