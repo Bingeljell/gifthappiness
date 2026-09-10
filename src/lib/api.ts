@@ -170,6 +170,10 @@ export type PublicContribution = {
   created_at: string;
 };
 
+export function getCelebrations(): Promise<ApiResult<{ celebrations: PublicCelebration[] }>> {
+  return apiFetch("/celebrations");
+}
+
 export function getCelebration(slug: string): Promise<ApiResult<{ celebration: PublicCelebration }>> {
   return apiFetch(`/celebrations/${encodeURIComponent(slug)}`);
 }
@@ -217,8 +221,36 @@ export type MyCelebration = {
   active_from: string | null;
   active_till: string | null;
   status: string;
+  message: string | null;
   charity_id: string;
+  charity_name: string | null;
+  charity_slug: string | null;
 };
+
+// Fields a host may change on their own celebration. The backend narrows this
+// further once the celebration is published -- only the message and dates are
+// accepted then, and a rejected field comes back as a 409 with an explanation
+// (see workers/src/routes/me.ts).
+export type UpdateMyCelebrationInput = Partial<{
+  celebrationType: string;
+  celebrationDate: string | null;
+  activeFrom: string | null;
+  activeTill: string | null;
+  message: string | null;
+  charitySlug: string;
+}>;
+
+export function updateMyCelebration(
+  token: string,
+  slug: string,
+  input: UpdateMyCelebrationInput,
+): Promise<ApiResult<{ celebration: MyCelebration }>> {
+  return apiFetch(`/me/celebrations/${encodeURIComponent(slug)}`, {
+    method: "PATCH",
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify(input),
+  });
+}
 
 export function getMyCelebrations(token: string): Promise<ApiResult<{ celebrations: MyCelebration[] }>> {
   return apiFetch("/me/celebrations", {
@@ -394,6 +426,9 @@ export type AdminCelebration = {
   active_till: string | null;
   status: CelebrationStatus;
   message: string | null;
+  // Null until host picture upload exists. Rendered in the admin preview so a
+  // human sees any image before the celebration can be published.
+  picture_url: string | null;
   created_at: string;
   host: { name: string | null; email: string; mobile: string | null } | null;
   charity: { name: string; slug: string } | null;

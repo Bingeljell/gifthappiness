@@ -1,11 +1,11 @@
 import type { Env } from "./lib/env";
 import { corsHeaders, errorResponse, json, withCors } from "./lib/response";
-import { createCelebration, getCelebration, listCelebrationContributions } from "./routes/celebrations";
+import { createCelebration, getCelebration, listCelebrationContributions, listCelebrations } from "./routes/celebrations";
 import { listCharities, getCharityBySlug } from "./routes/charities";
 import { submitContribution } from "./routes/contributions";
 import { requestVerification, confirmVerification } from "./routes/verification";
 import { requestLogin, confirmLogin, getMe, logout } from "./routes/auth";
-import { listMyCelebrations, listMyContributions } from "./routes/me";
+import { listMyCelebrations, listMyContributions, updateMyCelebration } from "./routes/me";
 import { listCharitiesAdmin, createCharity, updateCharity, deleteCharity } from "./routes/admin";
 import { listCelebrationsAdmin, updateCelebration, deleteCelebration } from "./routes/adminCelebrations";
 import { uploadCharityLogo, uploadCharityHeader } from "./routes/uploads";
@@ -40,6 +40,11 @@ async function handleRequest(request: Request, env: Env, ctx: ExecutionContext):
   // POST /celebrations
   if (method === "POST" && segments.length === 1 && segments[0] === "celebrations") {
     return createCelebration(request, env, ctx);
+  }
+
+  // GET /celebrations
+  if (method === "GET" && segments.length === 1 && segments[0] === "celebrations") {
+    return listCelebrations(env);
   }
 
   // GET /celebrations/:slug
@@ -100,6 +105,11 @@ async function handleRequest(request: Request, env: Env, ctx: ExecutionContext):
   // GET /me/celebrations
   if (method === "GET" && segments.length === 2 && segments[0] === "me" && segments[1] === "celebrations") {
     return listMyCelebrations(request, env);
+  }
+
+  // PATCH /me/celebrations/:slug
+  if (method === "PATCH" && segments.length === 3 && segments[0] === "me" && segments[1] === "celebrations") {
+    return updateMyCelebration(segments[2], request, env);
   }
 
   // GET /me/contributions
