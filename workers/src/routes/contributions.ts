@@ -98,14 +98,7 @@ export async function submitContribution(slug: string, request: Request, env: En
       });
     }
 
-    return json(
-      {
-        contribution,
-        note: "Payment gateway integration is not live yet; this contribution is recorded as pending.",
-      },
-      env,
-      201,
-    );
+    return json({ contribution }, env, 201);
   } catch (err) {
     if (err instanceof ValidationError) {
       return errorResponse(err.message, env, 422);

@@ -13,10 +13,18 @@ export default function ContactPage() {
             Get in touch
           </h1>
           <div className="rounded-3xl bg-white border border-gray-100 p-8">
-            <p className="text-gray-600 leading-relaxed font-medium">
-              A dedicated contact channel has not been finalized yet. This page is a placeholder so the site&apos;s
-              navigation and footer are complete; a real contact method (email, form, or both) will be added here
-              once it is decided.
+            <p className="text-gray-600 leading-relaxed font-medium mb-6">
+              Questions about hosting a celebration, contributing to one, or listing your charity? We&apos;d love to
+              hear from you.
+            </p>
+            <a
+              href="mailto:hello@gifthappiness.org"
+              className="inline-block text-2xl md:text-3xl font-black text-primary-pink hover:underline break-all"
+            >
+              hello@gifthappiness.org
+            </a>
+            <p className="text-sm text-gray-500 leading-relaxed mt-6">
+              We read every message and aim to reply within two working days.
             </p>
           </div>
         </div>

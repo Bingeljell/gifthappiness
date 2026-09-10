@@ -193,9 +193,11 @@ export function notifyHostApproved(env: Env, ctx: ExecutionContext, celebration:
 
 // 4a. Donor contributed -> confirm what was recorded.
 //
-// Deliberately NOT called a receipt. No payment gateway exists yet
-// (contributions are written with payment_status "pending"), so claiming money
-// was received would be false. Revisit this copy when payments go live.
+// Deliberately NOT a receipt. No payment has been taken (contributions are
+// written with payment_status "pending"), so this must never claim money was
+// received. The copy stays customer-facing rather than admitting to an
+// unfinished gateway -- it promises payment details, which is both true and
+// what the donor actually needs next. Revisit when payments go live.
 export function notifyDonorContribution(
   env: Env,
   ctx: ExecutionContext,
@@ -205,14 +207,14 @@ export function notifyDonorContribution(
     preheader: "We've recorded your contribution.",
     heading: "Thank you for your contribution",
     paragraphs: [
-      `Thank you, ${args.donorName}. We've recorded your intention to give ${formatAmount(args.amount)} to ${args.charityName}.`,
-      "Online payments aren't live on GiftHappiness yet, so no money has been taken. We'll email you with payment details as soon as that's ready.",
+      `Thank you, ${args.donorName}. We've recorded your contribution of ${formatAmount(args.amount)} to ${args.charityName}.`,
+      "We'll be in touch shortly with payment details so you can complete it. No amount has been debited yet.",
     ],
     details: [
       ["Amount", formatAmount(args.amount)],
       ["Charity", args.charityName],
       ["Celebration", titleCase(args.celebrationType)],
-      ["Status", "Recorded — payment pending"],
+      ["Status", "Awaiting payment"],
     ],
     footerNote: "You're receiving this because you contributed to a celebration on GiftHappiness.",
   });
