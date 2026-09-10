@@ -3,7 +3,7 @@ import { json, errorResponse } from "../lib/response";
 import { readJsonBody, requireEmail, requireString, ValidationError } from "../lib/validate";
 import { generateCode, hashCode } from "../lib/code";
 import { createSession, deleteSession, getSessionUser } from "../lib/session";
-import { sendEmail } from "../lib/email";
+import { sendSignInCode } from "../lib/emails";
 import type { Env } from "../lib/env";
 
 const CODE_TTL_MINUTES = 15;
@@ -44,7 +44,7 @@ export async function requestLogin(request: Request, env: Env): Promise<Response
       return errorResponse("Could not issue a sign-in code", env, 500);
     }
 
-    const sent = await sendEmail(env, email, "Your GiftHappiness sign-in code", `Your sign-in code is ${code}. It expires in ${CODE_TTL_MINUTES} minutes.`);
+    const sent = await sendSignInCode(env, email, code, CODE_TTL_MINUTES);
     if (!sent) {
       return errorResponse("Could not send the sign-in code email", env, 502);
     }

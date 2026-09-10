@@ -2,6 +2,7 @@ import { getSupabaseClient } from "../lib/supabase";
 import { json, errorResponse } from "../lib/response";
 import { readJsonBody, optionalString, ValidationError } from "../lib/validate";
 import { getSessionUser } from "../lib/session";
+import { notifyHostApproved, notifyHostCompleted } from "../lib/emails";
 import type { Env } from "../lib/env";
 
 // Mirrors admin.ts's isAuthorizedAdmin -- kept local rather than shared to
@@ -56,7 +57,7 @@ export async function listCelebrationsAdmin(request: Request, env: Env): Promise
 // over", so admins close one out by setting that instead of adding a new
 // value. Also doubles as a general admin edit (celebration_type/date/active
 // window/message) for fixing a celebration that has something wrong with it.
-export async function updateCelebration(slug: string, request: Request, env: Env): Promise<Response> {
+export async function updateCelebration(slug: string, request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   if (!(await isAuthorizedAdmin(request, env))) {
     return errorResponse("Unauthorized", env, 401);
   }
@@ -84,6 +85,17 @@ export async function updateCelebration(slug: string, request: Request, env: Env
     updates.updated_at = new Date().toISOString();
 
     const supabase = getSupabaseClient(env);
+
+    // Capture the status *before* the update. Without this, editing the
+    // message on an already-published celebration would re-send the "your
+    // celebration is live" email every time.
+    const { data: previous } = await supabase
+      .from("celebrations")
+      .select("status")
+      .eq("slug", slug)
+      .maybeSingle();
+    const previousStatus = previous?.status as string | undefined;
+
     const { data, error } = await supabase
       .from("celebrations")
       .update(updates)
@@ -99,6 +111,38 @@ export async function updateCelebration(slug: string, request: Request, env: Env
     if (!data) {
       return errorResponse("Celebration not found", env, 404);
     }
+    // Nested selects come back as objects (or arrays, depending on the
+    // relationship postgrest infers), so normalise before reading.
+    const host = (Array.isArray(data.host) ? data.host[0] : data.host) as
+      | { name: string | null; email: string }
+      | undefined;
+    const charity = (Array.isArray(data.charity) ? data.charity[0] : data.charity) as
+      | { name: string }
+      | undefined;
+
+    const newStatus = data.status as string;
+    const statusChanged = previousStatus !== undefined && previousStatus !== newStatus;
+
+    if (statusChanged && host?.email) {
+      if (newStatus === "published") {
+        notifyHostApproved(env, ctx, {
+          slug: data.slug as string,
+          celebrationType: data.celebration_type as string,
+          celebrationDate: (data.celebration_date as string | null) ?? null,
+          charityName: charity?.name ?? "the charity",
+          hostName: host.name,
+          hostEmail: host.email,
+        });
+      } else if (newStatus === "expired") {
+        await sendCompletionEmail(env, ctx, data.id as string, {
+          hostEmail: host.email,
+          hostName: host.name,
+          charityName: charity?.name ?? "the charity",
+          celebrationType: data.celebration_type as string,
+        });
+      }
+    }
+
     return json({ celebration: data }, env);
   } catch (err) {
     if (err instanceof ValidationError) {
@@ -106,6 +150,32 @@ export async function updateCelebration(slug: string, request: Request, env: Env
     }
     return errorResponse("Unexpected error", env, 500);
   }
+}
+
+// The completion email reports totals, so it needs the contribution rows.
+// Only 'succeeded' payments would count once a gateway exists; until then
+// every row is 'pending', so all non-failed rows are counted and the copy
+// stays deliberately vague about money having moved.
+async function sendCompletionEmail(
+  env: Env,
+  ctx: ExecutionContext,
+  celebrationId: string,
+  host: { hostEmail: string; hostName: string | null; charityName: string; celebrationType: string },
+): Promise<void> {
+  const supabase = getSupabaseClient(env);
+  const { data: contributions } = await supabase
+    .from("contributions")
+    .select("amount, payment_status")
+    .eq("celebration_id", celebrationId);
+
+  const counted = (contributions ?? []).filter((c) => c.payment_status !== "failed");
+  const totalAmount = counted.reduce((sum, c) => sum + Number(c.amount ?? 0), 0);
+
+  notifyHostCompleted(env, ctx, {
+    ...host,
+    contributionCount: counted.length,
+    totalAmount,
+  });
 }
 
 // DELETE /admin/celebrations/:slug -- for removing a celebration that was

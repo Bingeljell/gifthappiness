@@ -1,6 +1,7 @@
 import { getSupabaseClient } from "../lib/supabase";
 import { json, errorResponse } from "../lib/response";
 import { readJsonBody, requireString, requireEmail, requireMobile, optionalString, ValidationError } from "../lib/validate";
+import { notifyHostSubmitted, notifyAdminsOfNewCelebration } from "../lib/emails";
 import type { Env } from "../lib/env";
 
 function slugify(text: string): string {
@@ -16,7 +17,7 @@ function slugify(text: string): string {
 // Status stays "draft" until OTP verification and publish are wired up —
 // this route only covers the "creating a celebration" item from
 // docs/plan.md's Worker API route list.
-export async function createCelebration(request: Request, env: Env): Promise<Response> {
+export async function createCelebration(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   try {
     const body = await readJsonBody(request);
 
@@ -35,7 +36,7 @@ export async function createCelebration(request: Request, env: Env): Promise<Res
 
     const { data: charity, error: charityError } = await supabase
       .from("charities")
-      .select("id")
+      .select("id, name")
       .eq("slug", charitySlug)
       .single();
 
@@ -94,6 +95,20 @@ export async function createCelebration(request: Request, env: Env): Promise<Res
     if (celebrationError || !celebration) {
       return errorResponse("Could not create celebration", env, 500);
     }
+
+    // Both sends are fire-and-forget: the celebration row is already
+    // committed, so a mail failure must not turn a successful submission into
+    // an error for the host.
+    const summary = {
+      slug: celebration.slug,
+      celebrationType,
+      celebrationDate: celebrationDate ?? null,
+      charityName: charity.name as string,
+      hostName,
+      hostEmail,
+    };
+    notifyHostSubmitted(env, ctx, summary);
+    notifyAdminsOfNewCelebration(env, ctx, summary);
 
     return json({ celebration }, env, 201);
   } catch (err) {

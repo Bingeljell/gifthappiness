@@ -10,6 +10,7 @@ import {
   ValidationError,
 } from "../lib/validate";
 import { getSessionUser } from "../lib/session";
+import { notifyDonorContribution, notifyHostContribution } from "../lib/emails";
 import type { Env } from "../lib/env";
 
 // POST /celebrations/:slug/contributions
@@ -17,7 +18,7 @@ import type { Env } from "../lib/env";
 // wired up yet (docs/plan.md "Payments Plan" lists this as an open decision),
 // so payment_status stays "pending" here; moving it to "succeeded" is meant
 // to happen via a future gateway webhook, not this route.
-export async function submitContribution(slug: string, request: Request, env: Env): Promise<Response> {
+export async function submitContribution(slug: string, request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   try {
     const body = await readJsonBody(request);
 
@@ -40,7 +41,7 @@ export async function submitContribution(slug: string, request: Request, env: En
 
     const { data: celebration, error: celebrationError } = await supabase
       .from("celebrations")
-      .select("id, status")
+      .select("id, status, celebration_type, host:users!host_id(name, email), charity:charities!charity_id(name)")
       .eq("slug", slug)
       .maybeSingle();
 
@@ -72,6 +73,42 @@ export async function submitContribution(slug: string, request: Request, env: En
 
     if (contributionError || !contribution) {
       return errorResponse("Could not record contribution", env, 500);
+    }
+
+    // Notifications only -- the contribution row is already committed, so
+    // neither send may affect the response the donor gets.
+    const host = (Array.isArray(celebration.host) ? celebration.host[0] : celebration.host) as
+      | { name: string | null; email: string }
+      | undefined;
+    const charity = (Array.isArray(celebration.charity) ? celebration.charity[0] : celebration.charity) as
+      | { name: string }
+      | undefined;
+    const charityName = charity?.name ?? "the charity";
+    const celebrationType = (celebration.celebration_type as string) ?? "celebration";
+
+    // donorEmail is optional on this form, so there may be nobody to confirm to.
+    if (donorEmail) {
+      notifyDonorContribution(env, ctx, {
+        donorEmail,
+        donorName,
+        amount,
+        charityName,
+        celebrationType,
+      });
+    }
+
+    if (host?.email) {
+      notifyHostContribution(env, ctx, {
+        hostEmail: host.email,
+        hostName: host.name,
+        donorName,
+        amount,
+        anonymous,
+        showName,
+        showAmount,
+        message: message ?? null,
+        charityName,
+      });
     }
 
     return json(
